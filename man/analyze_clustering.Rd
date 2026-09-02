@@ -7,15 +7,18 @@
 analyze_clustering(
   data,
   traits,
+  genotype_col = NULL,
   k = 4,
   linkage_method = "ward.D2",
   reporting_level = 1
 )
 }
 \arguments{
-\item{data}{A \code{data.frame} containing phenotypic records with a \code{Genotype} column or purely numeric traits.}
+\item{data}{A \code{data.frame} containing phenotypic records with genotype identifiers and numeric traits.}
 
 \item{traits}{A character vector specifying the quantitative traits to be integrated into the cluster matrix.}
+
+\item{genotype_col}{A character string specifying the column name for genotypes. If \code{NULL}, automatic column detection is performed. Defaults to \code{NULL}.}
 
 \item{k}{An integer specifying the target number of clusters to partition the tree. Defaults to \code{4}.}
 
@@ -44,16 +47,17 @@ cluster assignments, genotype groupings, trait cluster means, intra-cluster
 average distances, and inter-cluster centroid distances.
 }
 \examples{
-# Load benchmark breeding dataset
+# Load your own dataset
 data(gv_data, package = "AgriDataTools")
 
-# Specify trait columns matching gv_data structure
-my_traits <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW", "GYPM")
+# Specify trait columns matching your dataset structure
+traits <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW", "GYPM")
 
-# Run cluster engine (Modify k as needed, e.g., 3, 4, 5, or 6)
+# Run cluster engine (Modify k as needed, e.g., 3, 4, 5, or 12)
 cluster_results <- analyze_clustering(
   data = gv_data,
-  traits = my_traits,
+  traits = traits,
+  genotype_col = "Genotype",
   k = 4,
   linkage_method = "ward.D2",
   reporting_level = 1

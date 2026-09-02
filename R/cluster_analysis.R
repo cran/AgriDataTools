@@ -6,8 +6,9 @@
 #' cluster assignments, genotype groupings, trait cluster means, intra-cluster 
 #' average distances, and inter-cluster centroid distances.
 #'
-#' @param data A \code{data.frame} containing phenotypic records with a \code{Genotype} column or purely numeric traits.
+#' @param data A \code{data.frame} containing phenotypic records with genotype identifiers and numeric traits.
 #' @param traits A character vector specifying the quantitative traits to be integrated into the cluster matrix.
+#' @param genotype_col A character string specifying the column name for genotypes. If \code{NULL}, automatic column detection is performed. Defaults to \code{NULL}.
 #' @param k An integer specifying the target number of clusters to partition the tree. Defaults to \code{4}.
 #' @param linkage_method A character string specifying the target agglomerative clustering algorithm (e.g., \code{"ward.D2"}, \code{"complete"}, \code{"average"}). Defaults to \code{"ward.D2"}.
 #' @param reporting_level An integer flag defining console output verbosity: \code{0} for silent execution and \code{1} for detailed summary output to the console. Defaults to \code{1}.
@@ -29,21 +30,22 @@
 #' @export
 #'
 #' @examples
-#' # Load benchmark breeding dataset
+#' # Load your own dataset
 #' data(gv_data, package = "AgriDataTools")
 #' 
-#' # Specify trait columns matching gv_data structure
-#' my_traits <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW", "GYPM")
+#' # Specify trait columns matching your dataset structure
+#' traits <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW", "GYPM")
 #' 
-#' # Run cluster engine (Modify k as needed, e.g., 3, 4, 5, or 6)
+#' # Run cluster engine (Modify k as needed, e.g., 3, 4, 5, or 12)
 #' cluster_results <- analyze_clustering(
 #'   data = gv_data,
-#'   traits = my_traits,
+#'   traits = traits,
+#'   genotype_col = "Genotype",
 #'   k = 4,
 #'   linkage_method = "ward.D2",
 #'   reporting_level = 1
 #' )
-analyze_clustering <- function(data, traits, k = 4, linkage_method = "ward.D2", reporting_level = 1) {
+analyze_clustering <- function(data, traits, genotype_col = NULL, k = 4, linkage_method = "ward.D2", reporting_level = 1) {
   
   if (missing(data) || missing(traits)) {
     stop("CRITICAL ERROR: 'data' and 'traits' arguments must be provided.", call. = FALSE)
@@ -59,17 +61,27 @@ analyze_clustering <- function(data, traits, k = 4, linkage_method = "ward.D2", 
     stop(paste("PARAMETER ERROR: Invalid linkage method:", linkage_method), call. = FALSE)
   }
   
-  if ("Genotype" %in% colnames(data)) {
-    data$Genotype <- as.factor(data$Genotype)
-    formula_string <- stats::as.formula(paste("cbind(", paste(traits, collapse = ","), ") ~ Genotype"))
-    aggregated_means <- stats::aggregate(formula_string, data = data, FUN = mean, na.rm = TRUE)
-    row_identifiers <- as.character(aggregated_means$Genotype)
-    numerical_matrix <- aggregated_means[, traits, drop = FALSE]
-  } else {
-    aggregated_means <- stats::na.omit(data[, traits, drop = FALSE])
-    row_identifiers <- as.character(1:nrow(aggregated_means))
-    numerical_matrix <- aggregated_means
+  # Dynamic Genotype Column Detection
+  if (is.null(genotype_col)) {
+    possible_geno_cols <- c("Genotype", "genotype", "Genotypes", "genotypes", "Gen", "gen", "Variety", "variety", "Line", "line", "Cultivar", "cultivar")
+    matched_col <- intersect(possible_geno_cols, colnames(data))
+    if (length(matched_col) > 0) {
+      genotype_col <- matched_col[1]
+    }
   }
+  
+  if (is.null(genotype_col) || !genotype_col %in% colnames(data)) {
+    stop("CRITICAL STRUCTURAL ATTRIBUTE MISMATCH: Could not discover 'Genotype' identification column in the dataset.", call. = FALSE)
+  }
+  
+  # Ensure genotype column is treated as a clean factor/character and aggregate across any replications/blocks
+  data[[genotype_col]] <- as.factor(trimws(as.character(data[[genotype_col]])))
+  
+  formula_string <- stats::as.formula(paste("cbind(", paste(traits, collapse = ","), ") ~ ", genotype_col))
+  aggregated_means <- stats::aggregate(formula_string, data = data, FUN = mean, na.rm = TRUE)
+  
+  row_identifiers <- as.character(aggregated_means[[genotype_col]])
+  numerical_matrix <- aggregated_means[, traits, drop = FALSE]
   
   n_genotypes <- length(row_identifiers)
   
@@ -87,17 +99,19 @@ analyze_clustering <- function(data, traits, k = 4, linkage_method = "ward.D2", 
   cophenetic_distances <- stats::cophenetic(hierarchical_tree)
   cophenetic_correlation_val <- stats::cor(euclidean_distance_matrix, cophenetic_distances)
   
-  # Cut tree into k clusters
+  # Cut tree into k clusters using formatted cluster names
   cluster_cut <- stats::cutree(hierarchical_tree, k = k)
+  cluster_labels <- factor(paste0("Cluster_", cluster_cut), levels = paste0("Cluster_", 1:k))
+  
   cluster_df <- data.frame(
     Genotype = row_identifiers,
-    Cluster = paste0("Cluster_", cluster_cut),
+    Cluster = cluster_labels,
     stringsAsFactors = FALSE
   )
   
   # Compute Cluster Means Matrix on original scale
   calc_matrix <- numerical_matrix
-  calc_matrix$Cluster <- paste0("Cluster_", cluster_cut)
+  calc_matrix$Cluster <- cluster_labels
   cluster_means_df <- stats::aggregate(. ~ Cluster, data = calc_matrix, FUN = mean)
   
   # Categorize genotypes list by cluster
@@ -120,7 +134,7 @@ analyze_clustering <- function(data, traits, k = 4, linkage_method = "ward.D2", 
   
   # Calculate Inter-cluster Centroid Distances Matrix
   std_df <- as.data.frame(standardized_scores)
-  std_df$Cluster <- paste0("Cluster_", cluster_cut)
+  std_df$Cluster <- cluster_labels
   cluster_centroids <- stats::aggregate(. ~ Cluster, data = std_df, FUN = mean)
   rownames(cluster_centroids) <- cluster_centroids$Cluster
   cluster_centroids$Cluster <- NULL
@@ -136,21 +150,21 @@ analyze_clustering <- function(data, traits, k = 4, linkage_method = "ward.D2", 
     cat(" Cophenetic Correlation Fit   : ", round(cophenetic_correlation_val, 4), "\n", sep = "")
     cat(rep("-", 75), "\n", sep = "")
     
-    cat("\n--- CLUSTER MEMBERSHIP AND COUNT ---\n")
+    cat("\nTable 1: CLUSTER MEMBERSHIP AND COUNT\n")
     for (c_name in names(cluster_list)) {
       members <- cluster_list[[c_name]]
       cat(sprintf("%-12s (n = %2d) : %s\n", c_name, length(members), paste(members, collapse = ", ")))
     }
     
-    cat("\n--- INTRA-CLUSTER DISTANCES (Within Cluster Average) ---\n")
+    cat("\nTable 2: INTRA-CLUSTER DISTANCES (Within Cluster Average)\n")
     for (i in 1:k) {
       cat(sprintf("%-12s : %.4f\n", paste0("Cluster_", i), intra_dists[i]))
     }
     
-    cat("\n--- INTER-CLUSTER DISTANCE MATRIX (Between Centroids) ---\n")
+    cat("\nTable 3: INTER-CLUSTER DISTANCE MATRIX (Between Centroids)\n")
     print(round(inter_cluster_dist_mat, 4))
     
-    cat("\n--- CLUSTER MEANS MATRIX (Original Trait Values) ---\n")
+    cat("\nTable 4: CLUSTER MEANS MATRIX (Trait Mean Values)\n")
     print(cluster_means_df)
     cat(rep("=", 75), "\n\n", sep = "")
   }

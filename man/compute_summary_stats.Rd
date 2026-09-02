@@ -4,7 +4,7 @@
 \alias{compute_summary_stats}
 \title{Comprehensive Descriptive and Summary Statistics Engine for Phenotypic Traits}
 \usage{
-compute_summary_stats(data, traits = NULL, reporting_level = 2)
+compute_summary_stats(data, traits = NULL, reporting_level = 1)
 }
 \arguments{
 \item{data}{A verified \code{data.frame} containing the experimental trial records.}
@@ -13,13 +13,13 @@ compute_summary_stats(data, traits = NULL, reporting_level = 2)
 the system automatically discovers and evaluates all numeric columns. Defaults to \code{NULL}.}
 
 \item{reporting_level}{An integer vector flag defining console trace settings: \code{0} for silent,
-\code{1} for descriptive summary grids, and \code{2} for intensive diagnostic tracking. Defaults to \code{2}.}
+\code{1} for descriptive summary grids. Defaults to \code{1}.}
 }
 \value{
 A detailed structured \code{data.frame} where rows represent traits and columns contain calculated metrics.
 }
 \description{
-The `compute_summary_stats` function performs an exhaustive descriptive statistical sweep
+The \code{compute_summary_stats} function performs an exhaustive descriptive statistical sweep
 across multiple numeric traits in an agricultural dataset. It calculates central tendency,
 dispersion, and distribution shape metrics (skewness and kurtosis) for line screening.
 }
@@ -31,11 +31,9 @@ Kurtosis indicates tail weight relative to a normal curve. It dynamically filter
 like 'Genotype' or 'Replication' and targets purely phenotypic observations.
 }
 \examples{
-if (interactive()) {
-   # Generate standard summary profiles across all phenotypic traits
-   descriptive_grid <- compute_summary_stats(data = gv_data)
-   print(descriptive_grid)
-}
+# Generate standard summary profiles across all phenotypic traits
+descriptive_grid <- compute_summary_stats(data = gv_data)
+
 }
 \seealso{
 \code{\link{validate_agri_data}}

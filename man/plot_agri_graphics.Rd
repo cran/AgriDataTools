@@ -8,7 +8,7 @@ plot_agri_graphics(
   type,
   payload,
   trait_name = "Target Character Matrix",
-  reporting_level = 2,
+  reporting_level = 0,
   num_clusters = 4
 )
 }
@@ -26,21 +26,21 @@ title label. Used primarily in \code{"mean"} and \code{"path"} layouts.}
 
 \item{reporting_level}{An integer vector flag defining console trace settings:
 \code{0} for silent, \code{1} for structural updates, and \code{2} for
-exhaustive analytical tracing. Defaults to \code{2}.}
+exhaustive analytical tracing. Defaults to \code{0} (Clean Console).}
 
 \item{num_clusters}{An integer specifying the number of cluster groups to color 
 in the circular dendrogram module. Defaults to \code{4}.}
 }
 \value{
 Invisibly returns a logical scalar \code{TRUE} upon successful execution.
-   This function is primarily invoked for its side effect of rendering publication-grade
-   graphical plots (e.g., residual diagnostic plots, correlation heatmaps, mean performance
-   barcharts, PCA biplots, circular dendrograms, or path analysis plots) to the active 
-   graphics device.
+     This function is primarily invoked for its side effect of rendering publication-grade
+     graphical plots (e.g., residual diagnostic plots, correlation heatmaps, mean performance
+     barcharts, PCA biplots, circular dendrograms, or path analysis plots) to the active 
+     graphics device.
 }
 \description{
-The `plot_agri_graphics` function serves as the unified visualization hub for
-the AgriDataTools package. It handles basic statistical diagnostics
+The \code{plot_agri_graphics} function serves as the unified visualization hub for
+the \code{AgriDataTools} package. It handles basic statistical diagnostics
 (residuals, correlations) alongside modern publication-grade graphical
 representations for mean performance, PCA space, hierarchical dendrograms, 
 and path analysis direct effects.
@@ -60,58 +60,74 @@ traits <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW", "GYPM")
 k_groups <- 4
 
 # 1. Mean performance: Genotypic performance with LSD
-reps <- length(unique(gv_data$Replication))
-fit <- aov(PH ~ Genotype + Replication, data = gv_data)
-m_anova <- list(anova_table = data.frame(
-   Source = c("Genotype", "Replication", "Error"),
-   Df = summary(fit)[[1]]$Df,
-   MS = summary(fit)[[1]][[3]]
-))
-lsd_res <- compute_lsd(gv_data, "PH", m_anova, reps)
-plot_agri_graphics(type = "mean", payload = lsd_res,
-                   trait_name = "Plant Height")
+if (interactive()) {
+  reps <- length(unique(gv_data$Replication))
+  fit <- aov(PH ~ Genotype + Replication, data = gv_data)
+  m_anova <- list(anova_table = data.frame(
+    Source = c("Genotype", "Replication", "Error"),
+    Df = summary(fit)[[1]]$Df,
+    MS = summary(fit)[[1]][[3]]
+  ))
+  lsd_output <- compute_lsd(gv_data, "PH", m_anova, reps, reporting_level = 0)
+  plot_agri_graphics(type = "mean", payload = lsd_output,
+                     trait_name = "Plant Height")
+}
 
-# 2. PCA: Multivariate variation
-custom_traits_map <- c(
-     "PH"    = "Plant Height",
-     "SL"    = "Spike Length",
-     "PL"    = "Peduncle Length",
-     "NOT"   = "Number of Tillers",
-     "NOSS"  = "Number of Spikelets per Spike",
-     "TGW"   = "Thousand Grain Weight",
-     "GYPM"  = "Grain Yield per Meter"
-)
-pca_res <- analyze_pca(data = gv_data, traits = traits, trait_lookup = custom_traits_map)
-plot_agri_graphics(type = "pca", payload = pca_res,
-                   trait_name = "PCA Plot")
+# 2. PCA: Multivariate variation with unique actual genotype names
+if (interactive()) {
+   custom_traits_map <- c(
+       "PH"    = "Plant Height",
+       "SL"    = "Spike Length",
+       "PL"    = "Peduncle Length",
+       "NOT"   = "Number of Tillers",
+       "NOSS"  = "Number of Spikelets per Spike",
+       "TGW"   = "Thousand Grain Weight",
+       "GYPM"  = "Grain Yield per Meter"
+   )
+   pca_results <- analyze_pca(data = gv_data, traits = traits, 
+                              trait_lookup = custom_traits_map, 
+                              reporting_level = 0)
+   plot_agri_graphics(type = "pca", payload = pca_results,
+                      trait_name = "PCA Plot")
+}
 
 # 3. Clustering: Dendrogram with flexible cluster parameter option
-cl_res <- analyze_clustering(data = gv_data, traits = traits, k = k_groups)
-plot_agri_graphics(type = "cluster", payload = cl_res,
-                   trait_name = "Clustering", num_clusters = k_groups)
+if (interactive()) {
+   cluster_results <- analyze_clustering(data = gv_data, traits = traits,
+    k = k_groups, reporting_level = 0)
+   plot_agri_graphics(type = "cluster", payload = cluster_results,
+                      trait_name = "Clustering", num_clusters = k_groups)
+}
 
 # 4. Residuals: Diagnostic plots
-fit <- lm(PH ~ Genotype, data = gv_data)
-res_pl <- list(residuals = residuals(fit),
-               fitted_values = fitted(fit))
-plot_agri_graphics(type = "residual", payload = res_pl,
-                   trait_name = "Residuals")
+if (interactive()) {
+  fit <- lm(PH ~ Genotype, data = gv_data)
+  res_pl <- list(residuals = residuals(fit),
+                 fitted_values = fitted(fit))
+  plot_agri_graphics(type = "residual", payload = res_pl,
+                     trait_name = "Residuals")
+}
 
 # 5. Correlations: Phenotypic matrix
-cor_m <- cor(gv_data[, traits], use = "pairwise.complete.obs")
-plot_agri_graphics(type = "correlation",
-                   payload = list(correlation_matrix = cor_m),
-                   trait_name = "Correlation")
+if (interactive()) {
+  cor_m <- cor(gv_data[, traits], use = "pairwise.complete.obs")
+  plot_agri_graphics(type = "correlation",
+                     payload = list(correlation_matrix = cor_m),
+                     trait_name = "Correlation")
+}
 
 # 6. Path Analysis: Direct Effects Plot for Grain Yield per Meter (GYPM)
-corr_res <- compute_correlation(data = gv_data, traits = traits, reporting_level = 0)
-all_predictors <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW")
-path_res <- compute_path_analysis(
-   correlation_payload = corr_res, 
-   response_trait = "GYPM", 
-   predictor_traits = all_predictors,
-   reporting_level = 0
-)
-plot_agri_graphics(type = "path", payload = path_res, trait_name = "Grain Yield per Meter (GYPM)")
+if (interactive()) {
+  corr_results <- compute_correlation(data = gv_data, traits = traits, reporting_level = 0)
+  all_predictors <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW")
+  path_results <- compute_path_analysis(
+    correlation_payload = corr_results, 
+    response_trait = "GYPM", 
+    predictor_traits = all_predictors,
+    reporting_level = 0
+  )
+  plot_agri_graphics(type = "path", payload = path_results, 
+                     trait_name = "Grain Yield per Meter (GYPM)")
+}
 
 }

@@ -4,7 +4,7 @@ NULL
 #' Comprehensive Descriptive and Summary Statistics Engine for Phenotypic Traits
 #'
 #' @description
-#' The `compute_summary_stats` function performs an exhaustive descriptive statistical sweep
+#' The \code{compute_summary_stats} function performs an exhaustive descriptive statistical sweep
 #' across multiple numeric traits in an agricultural dataset. It calculates central tendency,
 #' dispersion, and distribution shape metrics (skewness and kurtosis) for line screening.
 #'
@@ -17,9 +17,9 @@ NULL
 #'
 #' @param data A verified \code{data.frame} containing the experimental trial records.
 #' @param traits A character vector specifying the exact column names to analyze. If \code{NULL},
-#'    the system automatically discovers and evaluates all numeric columns. Defaults to \code{NULL}.
+#'   the system automatically discovers and evaluates all numeric columns. Defaults to \code{NULL}.
 #' @param reporting_level An integer vector flag defining console trace settings: \code{0} for silent,
-#'    \code{1} for descriptive summary grids, and \code{2} for intensive diagnostic tracking. Defaults to \code{2}.
+#'   \code{1} for descriptive summary grids. Defaults to \code{1}.
 #'
 #' @return A detailed structured \code{data.frame} where rows represent traits and columns contain calculated metrics.
 #'
@@ -29,23 +29,16 @@ NULL
 #' @export
 #'
 #' @examples
-#' if (interactive()) {
-#'    # Generate standard summary profiles across all phenotypic traits
-#'    descriptive_grid <- compute_summary_stats(data = gv_data)
-#'    print(descriptive_grid)
-#' }
-compute_summary_stats <- function(data, traits = NULL, reporting_level = 2) {
+#' # Generate standard summary profiles across all phenotypic traits
+#' descriptive_grid <- compute_summary_stats(data = gv_data)
+#'
+compute_summary_stats <- function(data, traits = NULL, reporting_level = 1) {
   
   # =========================================================================
-  # BLOCK 1: STARTUP PARAMETERS AND TIMESTAMP TRACE
+  # BLOCK 1: STARTUP HEADER
   # =========================================================================
-  timestamp_start <- Sys.time()
-  
   if (reporting_level >= 1) {
-    cat(rep("=", 85), "\n", sep = "")
-    cat("AGRIDATATOOLS PACKAGED ENGINE v0.1.0 - DESCRIPTIVE SUMMARY STATISTICS\n")
-    cat("Computation Sweep Inception: ", as.character(timestamp_start), "\n")
-    cat(rep("-", 85), "\n", sep = "")
+    cat("\nDESCRIPTIVE SUMMARY STATISTICS\n\n")
   }
   
   # =========================================================================
@@ -56,11 +49,9 @@ compute_summary_stats <- function(data, traits = NULL, reporting_level = 2) {
   }
   
   if (is.null(traits)) {
-    if (reporting_level >= 2) {
-      cat("[DIAGNOSTIC - SUMMARY]: No traits supplied. Discovering numeric fields automatically...\n")
-    }
-    
-    ignore_fields <- c("Genotype", "Replication", "Rep", "Block", "Line", "Cultivar")
+    ignore_fields <- c("Genotype", "Genotypes", "Replication", "Replications", "Rep", "Reps", 
+                       "Block", "Blocks", "Line", "Lines", "Cultivar", "Cultivars", 
+                       "Variety", "Varieties", "Env", "Environment", "Loc", "Location", "Year")
     all_cols      <- colnames(data)
     numeric_cols  <- all_cols[sapply(data, is.numeric)]
     traits        <- setdiff(numeric_cols, ignore_fields)
@@ -82,10 +73,6 @@ compute_summary_stats <- function(data, traits = NULL, reporting_level = 2) {
   summary_records <- list()
   
   for (trait in traits) {
-    if (reporting_level >= 2) {
-      cat("[DIAGNOSTIC - SUMMARY]: Profiling statistical distribution moments for trait: ", trait, "\n")
-    }
-    
     vector_clean <- stats::na.omit(as.numeric(data[[trait]]))
     n_obs        <- length(vector_clean)
     
@@ -101,13 +88,24 @@ compute_summary_stats <- function(data, traits = NULL, reporting_level = 2) {
     min_val  <- min(vector_clean)
     max_val  <- max(vector_clean)
     
+    # Adjusted Sample Moments (Unbiased Skewness and Kurtosis)
     deviations <- vector_clean - mean_val
-    m2         <- sum(deviations^2) / n_obs
-    m3         <- sum(deviations^3) / n_obs
-    m4         <- sum(deviations^4) / n_obs
+    m2         <- sum(deviations^2)
+    m3         <- sum(deviations^3)
+    m4         <- sum(deviations^4)
     
-    skewness_val <- m3 / (m2^(1.5))
-    kurtosis_val <- (m4 / (m2^2)) - 3
+    if (n_obs > 2 && var_val > 0) {
+      skewness_val <- (n_obs * m3) / ((n_obs - 1) * (n_obs - 2) * (sd_val^3))
+    } else {
+      skewness_val <- 0
+    }
+    
+    if (n_obs > 3 && var_val > 0) {
+      kurtosis_val <- ((n_obs * (n_obs + 1) * m4) / ((n_obs - 1) * (n_obs - 2) * (n_obs - 3) * (var_val^2))) - 
+        ((3 * ((n_obs - 1)^2)) / ((n_obs - 2) * (n_obs - 3)))
+    } else {
+      kurtosis_val <- 0
+    }
     
     summary_records[[trait]] <- data.frame(
       "Trait"     = trait,
@@ -128,7 +126,14 @@ compute_summary_stats <- function(data, traits = NULL, reporting_level = 2) {
   rownames(compiled_summary) <- NULL
   
   # =========================================================================
-  # BLOCK 4: RETURN CONSOLE PAYLOAD
+  # BLOCK 4: FORMATTED CONSOLE TABLE WITH MINIMAL LINES
   # =========================================================================
+  if (reporting_level >= 1) {
+    cat("SUMMARY STATISTICS FOR ALL TRAITS:\n")
+    cat(rep("-", 90), "\n", sep = "")
+    print(compiled_summary, row.names = FALSE)
+    cat(rep("-", 90), "\n\n", sep = "")
+  }
+  
   return(compiled_summary)
 }

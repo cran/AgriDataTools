@@ -4,7 +4,7 @@
 \alias{estimate_variability}
 \title{Genetic Variability and Quantitative Inheritance Parameters Estimation Engine}
 \usage{
-estimate_variability(anova_results, total_replications, reporting_level = 2)
+estimate_variability(anova_results, total_replications, reporting_level = 1)
 }
 \arguments{
 \item{anova_results}{A structured \code{list} returned by either the \code{anova_rcbd}
@@ -14,7 +14,7 @@ or \code{anova_crd} analysis pipelines within this package.}
 in the experimental trial layout.}
 
 \item{reporting_level}{An integer flag defining console output details: \code{0} for silent,
-\code{1} for summary parameter tables, and \code{2} for comprehensive descriptive logs. Defaults to \code{2}.}
+\code{1} for summary parameter table. Defaults to \code{1}.}
 }
 \value{
 A structured named \code{list} containing calculated genetic variability components:
@@ -28,7 +28,7 @@ A structured named \code{list} containing calculated genetic variability compone
 \item{gam_percentage}{Genetic Advance as a percentage of the Grand Mean (GAM\%).}
 }
 \description{
-The `estimate_variability` function calculates comprehensive biometric genetic profiles
+The \code{estimate_variability} function calculates comprehensive biometric genetic profiles
 from replication-based agricultural trial datasets. It partitions phenotypic variance into
 Genotypic Variance (Vg), Phenotypic Variance (Vp), and Environmental Variance (Ve), and computes
 critical breeding metrics including Genotypic Coefficient of Variation (GCV), Phenotypic
@@ -41,19 +41,17 @@ the Error Mean Square (EMS) and Genotypic Mean Square (GMS) directly from comple
 \deqn{V_g = \frac{GMS - EMS}{r}}
 \deqn{V_p = V_g + EMS}
 \deqn{H^2 = \frac{V_g}{V_p}}
-Where \eqn{r} represents the total absolute replication or block count.
+Where \eqn{r} represents the total absolute replication count.
 
 If high environmental variations cause the computed Genotypic Variance to become negative,
 the system automatically applies a mathematical lower boundary floor at \code{0.0001} to preserve
 downstream pipeline integrity and issues a detailed structural warning message.
 }
 \examples{
-if (interactive()) {
-   # Execute complete genetic variability partitioning
-   rcbd_out <- anova_rcbd(data = gv_data, trait = "PH", reporting_level = 0)
-   var_metrics <- estimate_variability(anova_results = rcbd_out, total_replications = 3)
-   print(var_metrics$heritability_percentage)
-}
+data(gv_data, package = "AgriDataTools")
+reps <- length(unique(gv_data$Replication))
+rcbd_results <- anova_rcbd(data = gv_data, trait = "PH", reporting_level = 0)
+var_metrics <- estimate_variability(anova_results = rcbd_results, total_replications = reps)
 }
 \seealso{
 \code{\link{anova_rcbd}}, \code{\link{anova_crd}}

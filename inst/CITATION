@@ -1,0 +1,17 @@
+citHeader("Please, support this project by citing it in your publications!")
+
+bibentry(
+  bibtype = "Manual",
+  title = "AgriDataTools: Automated Statistical Analysis and Tools for Agricultural Research",
+  author = person("Faheem", "Khan"),
+  year = "2026",
+  note = "R package version 0.2.0",
+  url = "https://CRAN.R-project.org/package=AgriDataTools",
+  
+  textVersion = paste(
+    "Khan, F. (2026).",
+    "AgriDataTools: Automated Statistical Analysis and Tools for Agricultural Research.",
+    "R package version 0.2.0,",
+    "https://CRAN.R-project.org/package=AgriDataTools."
+  )
+)

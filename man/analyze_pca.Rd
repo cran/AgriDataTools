@@ -7,6 +7,7 @@
 analyze_pca(
   data,
   traits,
+  genotype_col = NULL,
   scale = TRUE,
   reporting_level = 2,
   trait_lookup = NULL
@@ -17,6 +18,8 @@ analyze_pca(
 
 \item{traits}{A character vector specifying the exact trait column names to include.}
 
+\item{genotype_col}{An optional character string specifying the column name for genotypes. If \code{NULL}, automatic column detection is performed. Defaults to \code{NULL}.}
+
 \item{scale}{Logical. If TRUE (default), variables are standardized to unit variance.}
 
 \item{reporting_level}{Integer. Control output verbosity: 0 (silent), 1 (summary), or 2 (exhaustive full reporting). Defaults to \code{2}.}
@@ -26,39 +29,41 @@ to full descriptive labels (e.g., c("PH" = "Plant Height")).}
 }
 \value{
 A structured named \code{list} containing 6 multivariate components:
-\item{pca_object}{The raw \code{prcomp} output object.}
+\item{pca_object}{The raw \code{prcomp} output object based on genotypic means.}
 \item{eigenvalues}{Data frame of eigenvalues, variance percentages, cumulative variance, and Kaiser retention decision.}
 \item{loadings}{Data frame of eigenvector loadings matrix.}
 \item{contributions}{Data frame of percentage contributions of each trait across components.}
 \item{cos2}{Data frame representing quality of representation (\eqn{Cos^2}) for each trait.}
-\item{scores}{Data frame of principal component scores assigned to individual genotypes.}
+\item{scores}{Data frame of principal component scores assigned to unique genotypes.}
 }
 \description{
 Performs Principal Component Analysis (PCA) on targeted quantitative agronomic 
 parameters. Supports dynamic trait mapping to convert trait abbreviations into 
-full descriptive names, and computes modern multivariate metrics including 
+full descriptive names, dynamic genotype column recognition, automatic replication 
+aggregation to genotypic means, and computes modern multivariate metrics including 
 Kaiser-Guttman retention rules, eigenvector loadings, and percentage trait contributions.
 }
 \examples{
 library(AgriDataTools)
 data("gv_data", package = "AgriDataTools")
 
-# Define your custom trait mapping before running (Edit names as needed)
+# Define custom trait mapping before running (Edit names as needed)
 custom_traits_map <- c(
-   "PH"   = "Plant Height",
-   "SL"   = "Spike Length",
-   "PL"   = "Peduncle Length",
-   "NOT"  = "Number of Tillers",
-   "NOSS" = "Number of Spikelets per Spike",
-   "TGW"  = "Thousand Grain Weight",
-   "GYPM" = "Grain Yield per Meter"
+    "PH"   = "Plant Height",
+    "SL"   = "Spike Length",
+    "PL"   = "Peduncle Length",
+    "NOT"  = "Number of Tillers",
+    "NOSS" = "Number of Spikelets per Spike",
+    "TGW"  = "Thousand Grain Weight",
+    "GYPM" = "Grain Yield per Meter"
 )
 
 # Run Modern PCA with full trait names
 pca_results <- analyze_pca(
-   data = gv_data,
-   traits = names(custom_traits_map),
-   trait_lookup = custom_traits_map
+    data = gv_data,
+    traits = names(custom_traits_map),
+    genotype_col = "Genotype",
+    trait_lookup = custom_traits_map
 )
 
 }

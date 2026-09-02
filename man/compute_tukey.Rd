@@ -9,59 +9,47 @@ compute_tukey(
   trait,
   anova_results,
   total_replications,
+  geno_col = NULL,
   alpha = 0.05,
   reporting_level = 2
 )
 }
 \arguments{
-\item{data}{A verified \code{data.frame} containing the columns \code{Genotype} and the
-phenotypic trait under evaluation.}
+\item{data}{A verified \code{data.frame} containing treatment lines/cultivars and the target phenotypic trait.}
 
 \item{trait}{A single character string specifying the column name of the target trait.}
 
-\item{anova_results}{A structured \code{list} derived from upstream ANOVA layouts.}
+\item{anova_results}{A structured \code{list} derived from upstream ANOVA layouts containing an \code{anova_table}.}
 
 \item{total_replications}{An integer specifying the absolute number of replication blocks (\eqn{r}).}
 
+\item{geno_col}{A character string specifying the treatment/genotype column name. Defaults to auto-detecting \code{"Genotype"}.}
+
 \item{alpha}{A numeric value defining the adjusted family-wise error rate threshold. Defaults to \code{0.05}.}
 
-\item{reporting_level}{An integer vector flag defining console trace settings. Defaults to \code{2}.}
+\item{reporting_level}{An integer vector flag defining console trace settings: \code{0} for silent execution, \code{1} for summary, and \code{2} for exhaustive tracking. Defaults to \code{2}.}
 }
 \value{
 A structured named \code{list} of class \code{"list"} containing 4 computational components:
 \item{tukey_value}{The absolute calculated scalar value of Tukey's Honestly Significant Difference threshold.}
 \item{se_mean}{The isolated Standard Error of the treatment mean scalar (\eqn{SE_{\bar{y}}}).}
-\item{comparison_matrix}{A detailed data frame or \code{NULL} layout reserved for pairwise lines differences.}
+\item{comparison_matrix}{A detailed data frame containing pairwise differences, q-statistics, p-values, and significance markers.}
 \item{ranked_means}{A structured data frame containing sorted treatment means and significance group letters (\code{Tukey_Letters}).}
 }
 \description{
-The `compute_tukey` function executes a high-precision pairwise post-hoc mean separation
-analysis using Tukey's Honestly Significant Difference framework.
+The \code{compute_tukey} function executes a high-precision pairwise post-hoc mean separation
+analysis using Tukey's Honestly Significant Difference framework. It calculates family-wise error
+control thresholds, pairwise differences, and outputs comprehensive ranking tables with group letters.
 }
 \examples{
 data(gv_data, package = "AgriDataTools")
 reps <- length(unique(gv_data$Replication))
-
-model_fit <- aov(PH ~ Genotype + Replication, data = gv_data)
-anova_summary <- summary(model_fit)[[1]]
-
-mock_anova <- list(
-  anova_table = data.frame(
-    Source = c("Genotype", "Replication", "Error"),
-    Df = anova_summary$Df,
-    MS = anova_summary$`Mean Sq`,
-    stringsAsFactors = FALSE
-  )
-)
+rcbd_results <- anova_rcbd(data = gv_data, trait = "PH", reporting_level = 0)
 
 tukey_output <- compute_tukey(
   data = gv_data,
   trait = "PH",
-  anova_results = mock_anova,
+  anova_results = rcbd_results,
   total_replications = reps
 )
-print(tukey_output$ranked_means)
-}
-\author{
-Faheem Khan (\email{2022ag94@uaf.edu.pk})
 }

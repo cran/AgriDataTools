@@ -9,19 +9,21 @@ compute_lsd(
   trait,
   anova_results,
   total_replications,
+  geno_col = NULL,
   alpha = 0.05,
   reporting_level = 2
 )
 }
 \arguments{
-\item{data}{A verified \code{data.frame} containing the columns \code{Genotype} and the
-phenotypic trait under investigation.}
+\item{data}{A verified \code{data.frame} containing treatment lines/cultivars and the target phenotypic trait.}
 
 \item{trait}{A single character string specifying the column name of the target trait.}
 
 \item{anova_results}{A structured \code{list} derived from upstream ANOVA layouts containing an \code{anova_table}.}
 
 \item{total_replications}{An integer specifying the absolute number of replication blocks (\eqn{r}).}
+
+\item{geno_col}{A character string specifying the treatment/genotype column name. Defaults to auto-detecting \code{"Genotype"}.}
 
 \item{alpha}{A numeric value defining the Type-I error rate probability threshold. Defaults to \code{0.05}.}
 
@@ -31,41 +33,24 @@ phenotypic trait under investigation.}
 A structured named \code{list} of class \code{"list"} containing 4 computational components:
 \item{lsd_value}{A numeric scalar representing the absolute calculated value of Fisher's Least Significant Difference at the specified alpha level.}
 \item{sed}{A numeric scalar representing the isolated Standard Error of Difference (SED) between two treatment means.}
-\item{comparison_matrix}{A \code{data.frame} or \code{NULL} layout reserved for detailed pairwise lines differences.}
+\item{comparison_matrix}{A \code{data.frame} layout containing detailed pairwise line differences, standard errors, and significance markers.}
 \item{ranked_means}{A \code{data.frame} containing lines/cultivars sorted by mean performance alongside their assigned statistical significance group letters (\code{LSD_Letters}).}
 }
 \description{
-The `compute_lsd` function executes a rigorous, high-precision pairwise post-hoc mean separation
+The \code{compute_lsd} function executes a rigorous, high-precision pairwise post-hoc mean separation
 analysis using Fisher's Least Significant Difference protocol. It isolates critical differences,
 evaluates pairwise significance metrics, and outputs comprehensive ranking tables with group letters.
 }
 \examples{
-# Load integrated data matrices
 data(gv_data, package = "AgriDataTools")
-
-# Total replications matching the experimental design blocks
 reps <- length(unique(gv_data$Replication))
+rcbd_results <- anova_rcbd(data = gv_data, trait = "PH", reporting_level = 0)
 
-# Generating upstream ANOVA structure from gv_data for the target trait (PH)
-model_fit <- aov(PH ~ Genotype + Replication, data = gv_data)
-anova_summary <- summary(model_fit)[[1]]
-
-mock_anova <- list(
-  anova_table = data.frame(
-    Source = c("Genotype", "Replication", "Error"),
-    Df = anova_summary$Df,
-    MS = anova_summary$`Mean Sq`,
-    stringsAsFactors = FALSE
-  )
-)
-
-# Running post-hoc separation sweeps with clean letters group layout
 lsd_output <- compute_lsd(
   data = gv_data, 
   trait = "PH", 
-  anova_results = mock_anova, 
+  anova_results = rcbd_results, 
   total_replications = reps, 
   alpha = 0.05
 )
-print(lsd_output$ranked_means)
 }

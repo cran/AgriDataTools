@@ -2,7 +2,7 @@ Package: AgriDataTools
 Type: Package
 Title: Automated Statistical Analysis and Tools for Agricultural
         Research
-Version: 0.1.2
+Version: 0.2.1
 Authors@R: person(given = "Faheem",
                   family = "Khan",
                   role = c("aut", "cre"),
@@ -28,14 +28,16 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Depends: R (>= 4.0.0)
-Imports: ggplot2, reshape2, factoextra, dendextend, circlize, stats,
-        graphics, dplyr, utils
+Imports: ggplot2, reshape2, factoextra, dendextend, circlize, ggrepel,
+        stats, graphics, dplyr, utils
 Config/roxygen2/version: 8.0.0
 VignetteBuilder: knitr
 Suggests: knitr, rmarkdown, testthat (>= 3.0.0)
+URL: https://faheemkhan15326.github.io/AgriDataTools/
+BugReports: https://github.com/faheemkhan15326/AgriDataTools/issues
 NeedsCompilation: no
-Packaged: 2026-08-01 08:55:04 UTC; Faheem khan
+Packaged: 2026-09-02 11:42:29 UTC; Faheem khan
 Author: Faheem Khan [aut, cre] (ORCID: <https://orcid.org/0009-0002-8963-7157>)
 Maintainer: Faheem Khan <2022ag94@uaf.edu.pk>
 Repository: CRAN
-Date/Publication: 2026-08-08 11:20:06 UTC
+Date/Publication: 2026-09-02 12:20:33 UTC

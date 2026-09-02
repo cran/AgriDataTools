@@ -4,28 +4,28 @@
 \alias{anova_crd}
 \title{Comprehensive Analysis of Variance (ANOVA) Engine for Completely Randomized Design (CRD)}
 \usage{
-anova_crd(data, trait, reporting_level = 2)
+anova_crd(data, trait, genotype_col = NULL, reporting_level = 1)
 }
 \arguments{
-\item{data}{A verified \code{data.frame} containing the columns \code{Genotype} and the
-target phenotypic trait response.}
+\item{data}{A verified \code{data.frame} containing genotype/treatment identifiers and phenotypic responses.}
 
 \item{trait}{A single character string specifying the exact column name of the numeric trait to analyze.}
 
-\item{reporting_level}{An integer flag defining console trace settings: \code{0} for silent execution,
-\code{1} for printing basic ANOVA summary tables, and \code{2} for comprehensive diagnostic trace logs. Defaults to \code{2}.}
+\item{genotype_col}{An optional character string specifying the column name for genotypes. If \code{NULL}, automatic column detection is performed. Defaults to \code{NULL}.}
+
+\item{reporting_level}{An integer flag defining console trace settings: \code{0} for silent execution and \code{1} for printing formatted ANOVA summary tables. Defaults to \code{1}.}
 }
 \value{
-Invisibly returns a structured named \code{list} of class \code{"list"} containing 4 computational components:
-\item{anova_table}{A \code{data.frame} acting as the standard ANOVA source matrix table for CRD, containing degrees of freedom, sums of squares, mean squares, F-statistics, and p-values.}
-\item{cv_percentage}{A numeric scalar representing the computed Coefficient of Variation percentage (CV\%).}
-\item{mean_square_error}{A numeric scalar representing the isolated Residual Error Mean Square (EMS), ready for downstream evaluation.}
-\item{grand_mean}{A numeric scalar representing the overall arithmetic mean value of the evaluated phenotypic trait.}
-
-If \code{reporting_level >= 1}, the compiled ANOVA table along with the grand mean and CV\% are printed directly to the console before returning the list.
+Invisibly returns a structured named \code{list} containing 4 computational components:
+\itemize{
+  \item \strong{anova_table}: A \code{data.frame} acting as the standard ANOVA source matrix table for CRD.
+  \item \strong{cv_percentage}: A numeric scalar representing the computed Coefficient of Variation percentage.
+  \item \strong{mean_square_error}: A numeric scalar representing the isolated Residual Error Mean Square.
+  \item \strong{grand_mean}: A numeric scalar representing the overall arithmetic mean value.
+}
 }
 \description{
-The `anova_crd` function executes a complete, high-precision linear model analysis for
+The \code{anova_crd} function executes a complete, high-precision linear model analysis for
 agricultural, laboratory, or greenhouse trials laid out under a Completely Randomized Design (CRD).
 It computes partition sums of squares, hypothesis testing statistics, treatment variances,
 significance flags, and the Coefficient of Variation (CV%).
@@ -41,9 +41,11 @@ residual experimental error. The function handles both balanced and unbalanced d
 perfectly, ensuring proper adjustments to degrees of freedom if replication numbers vary across lines.
 }
 \examples{
-   # Execute complete CRD partition on your actual target trait (GYPM)
-   crd_results <- anova_crd(data = gv_data, trait = "GYPM")
-   
+# Load your own dataset
+data(gv_data, package = "AgriDataTools")
+# Execute complete CRD partition on target trait Plant Height(PH)
+crd_results <- anova_crd(data = gv_data, trait = "PH", genotype_col = "Genotype")
+
 }
 \seealso{
 \code{\link{anova_rcbd}}

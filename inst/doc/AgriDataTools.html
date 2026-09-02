@@ -352,53 +352,61 @@ display: none;
 </div>
 
 
-<p>title: “AgriDataTools: Automated Biometrical &amp; Genetic Analysis
-in R” author: “Faheem Khan” date: “r Sys.Date()” output:
-rmarkdown::html_vignette vignette: &gt; % % % Code snippet</p>
-<p>knitr::opts_chunk_options( collapse = TRUE, comment = “#&gt;”,
-fig.width = 7, fig.height = 5 ) Introduction The AgriDataTools package
-provides an integrated analytics and visualization hub specifically
-designed for plant breeders, agronomists, and quantitative geneticists.
-It streamlines biometrical trial workflows—including Analysis of
-Variance (ANOVA), Mean Comparisons, Principal Component Analysis (PCA),
-Hierarchical Cluster Analysis, and Path Coefficient Evaluation.</p>
-<p>This vignette demonstrates the end-to-end execution of AgriDataTools
-using the built-in multi-trait agricultural screening dataset
-gv_data.</p>
-<ol style="list-style-type: decimal">
-<li>Environment Initialization and Data Loading We begin by loading the
-package and inspecting the built-in wheat phenotypic trial dataset
-gv_data.</li>
-</ol>
-<p>Code snippet</p>
+<p>title: “Automated Statistical Analysis and Tools for Agricultural
+Research” author: “Faheem Khan” date: “2026-09-02” output:
+rmarkdown::html_vignette vignette: &gt; % % % knitr::opts_chunk$set(
+collapse = TRUE, comment = “#&gt;”, fig.width = 7, fig.height = 5 )
+Introduction and Background In plant breeding, agronomy, and
+quantitative genetics research, biometrical evaluations and multivariate
+screening require rigorous statistical workflows. Historically,
+researchers have faced a major bottleneck: standard R packages are
+fragmented, forcing users to jump between multiple separate libraries
+for Analysis of Variance, mean separation tests, genetic variability
+components, phenotypic/genotypic correlations, path coefficient
+decomposition, multivariate Principal Component Analysis (PCA),
+hierarchical clustering, and high-precision publication graphics.</p>
+<p>AgriDataTools solves this problem as an all-in-one comprehensive
+computational hub. It integrates the entire biometrical pipeline into a
+single, seamless package, allowing agricultural researchers to execute
+complex genetic analyses and render publication-ready graphical
+diagnostics without manual scripting overhead.</p>
+<p>This vignette demonstrates the exhaustive, end-to-end execution of
+all computational modules embedded within AgriDataTools using the
+built-in multi-trait agricultural screening dataset gv_data.</p>
+<p>Environment Initialization and Dataset Architecture We begin by
+loading the package and exploring the structure of the built-in wheat
+phenotypic trial dataset gv_data.</p>
 <p>library(AgriDataTools)</p>
 <div id="load-sample-trial-dataset" class="section level1">
 <h1>Load sample trial dataset</h1>
 <p>data(gv_data, package = “AgriDataTools”)</p>
 </div>
-<div id="inspect-dataset-structure" class="section level1">
-<h1>Inspect dataset structure</h1>
-<p>head(gv_data) The dataset contains evaluation data across multiple
-replications and genotypes for primary agronomic characters:</p>
-<p>PH: Plant Height</p>
-<p>SL: Spike Length</p>
-<p>PL: Peduncle Length</p>
-<p>NOT: Number of Tillers</p>
+<div id="inspect-dataset-structure-and-first-few-rows" class="section level1">
+<h1>Inspect dataset structure and first few rows</h1>
+<p>head(gv_data) str(gv_data) The dataset captures experimental
+evaluations across multiple replications and genotypes for primary
+agronomic characters:</p>
+<p>PH: Plant Height (cm)</p>
+<p>SL: Spike Length (cm)</p>
+<p>PL: Peduncle Length (cm)</p>
+<p>NOT: Number of Tillers per Plant</p>
 <p>NOSS: Number of Spikelets per Spike</p>
-<p>TGW: Thousand Grain Weight</p>
-<p>GYPM: Grain Yield per Meter</p>
-<ol start="2" style="list-style-type: decimal">
-<li>Phenotypic Traits Analysis &amp; Mean Performance To evaluate
-single-trait phenotypic performance, we perform Analysis of Variance
-(ANOVA) followed by Least Significant Difference (LSD) mean ranking
-using compute_lsd().</li>
-</ol>
-<p>Code snippet</p>
-</div>
-<div id="define-trait-vector-and-replications" class="section level1">
-<h1>Define trait vector and replications</h1>
-<p>traits &lt;- c(“PH”, “SL”, “PL”, “NOT”, “NOSS”, “TGW”, “GYPM”) reps
-&lt;- length(unique(gv_data$Replication))</p>
+<p>TGW: Thousand Grain Weight (g)</p>
+<p>GYPM: Grain Yield per Meter (kg)</p>
+<p>Descriptive Summary Statistics Module Before diving into advanced
+biometrical models, exploring basic distributional summaries across
+traits helps verify data integrity, mean levels, and overall data
+spread. traits &lt;- c(“PH”, “SL”, “PL”, “NOT”, “NOSS”, “TGW”,
+“GYPM”)</p>
+<p>if (interactive()) { # Generate standard summary profiles across all
+phenotypic traits descriptive_grid &lt;- compute_summary_stats(data =
+gv_data) print(descriptive_grid) } Analysis of Variance (ANOVA) &amp;
+Post-Hoc Mean Comparison Tests Module To test genetic differences among
+genotypes under Randomized Complete Block Designs (RCBD) or Completely
+Randomized Designs (CRD), AgriDataTools automates ANOVA and multiple
+range comparison tests (Least Significant Difference, Tukey, and
+Scheffe) based on classical biometrical standards (Steel et al., 1997).
+reps &lt;- length(unique(gv_data$Replication))</p>
 </div>
 <div id="fit-anova-model-for-plant-height-ph" class="section level1">
 <h1>Fit ANOVA model for Plant Height (PH)</h1>
@@ -414,61 +422,113 @@ summary(fit)[[1]][[3]] ) )</p>
 </div>
 <div id="display-ranked-means-table" class="section level1">
 <h1>Display Ranked Means Table</h1>
-<p>print(lsd_res$ranked_means) 3. Correlation &amp; Path Coefficient
-Analysis Understanding trait interrelationships and direct/indirect
-impacts on yield components is crucial for selection indexing.</p>
-<p>Code snippet</p>
+<p>print(lsd_res<span class="math inline">\(ranked_means)
+Quantitative Genetic Variability Parameters Module
+A premier feature of AgriDataTools is the automated estimation of
+quantitative genetic parameters—including Phenotypic Coefficient of
+Variation (PCV), Genotypic Coefficient of Variation (GCV), Environmental
+Coefficient of Variation (ECV), Broad-Sense Heritability
+(\)</span>H^2<span class="math inline">\(), and Expected Genetic Advance
+(\)</span>GA<span class="math inline">\() following Burton &amp; Devane
+(1953) and Johnson et al. (1955).
+if (interactive()) {
+# Execute complete genetic variability partitioning
+rcbd_out &lt;- anova_rcbd(data = gv_data, trait = &quot;PH&quot;,
+reporting_level = 0)
+var_metrics &lt;- estimate_variability(anova_results = rcbd_out,
+total_replications = 3)
+print(var_metrics\)</span>heritability_percentage) } Correlation &amp;
+Path Coefficient Analysis Module Understanding trait interrelationships
+and direct/indirect contributions of predictor characters toward grain
+yield is critical for plant selection indexing. AgriDataTools executes
+phenotypic/genotypic correlations (Miller et al., 1958) followed by
+Dewey &amp; Lu (1959) path coefficient direct and indirect effects
+decomposition. data(gv_data, package = “AgriDataTools”) my_traits &lt;-
+c(“PH”, “SL”, “PL”, “NOT”, “NOSS”, “TGW”, “GYPM”) corr_results &lt;-
+compute_correlation( data = gv_data, traits = my_traits, reporting_level
+= 1 )</p>
+<p>all_predictors &lt;- c(“PH”, “SL”, “PL”, “NOT”, “NOSS”, “TGW”)
+path_out &lt;- compute_path_analysis( correlation_payload =
+corr_results, response_trait = “GYPM”, predictor_traits =
+all_predictors, reporting_level = 2 ) Multivariate Pattern Discovery
+(PCA &amp; Clustering) Module To group germplasm lines and assess
+multidimensional phenotypic divergence, the package provides robust
+Principal Component Analysis (Jolliffe, 2002) and Hierarchical
+Agglomerative Clustering (Sneath &amp; Sokal, 1973). # Execute Principal
+Component Analysis pca_res &lt;- analyze_pca( data = gv_data, traits =
+traits )</p>
 </div>
-<div id="compute-phenotypic-correlation-matrix" class="section level1">
-<h1>Compute Phenotypic Correlation Matrix</h1>
-<p>corr_res &lt;- compute_correlation( data = gv_data, traits = traits,
-reporting_level = 0 )</p>
-</div>
-<div id="perform-path-coefficient-analysis-on-yield-gypm" class="section level1">
-<h1>Perform Path Coefficient Analysis on Yield (GYPM)</h1>
-<p>path_res &lt;- compute_path_analysis( correlation_payload = corr_res,
-response_trait = “GYPM”, reporting_level = 0 )</p>
-</div>
-<div id="inspect-direct-effects" class="section level1">
-<h1>Inspect Direct Effects</h1>
-<p>print(path_res) 4. Multivariate Pattern Discovery (PCA &amp;
-Clustering) To group germplasm lines based on multi-trait variance, we
-apply Principal Component Analysis (PCA) and Hierarchical
-Clustering.</p>
-<p>Code snippet</p>
-</div>
-<div id="execute-pca-analysis-engine" class="section level1">
-<h1>Execute PCA Analysis Engine</h1>
-<p>pca_res &lt;- analyze_pca( data = gv_data, traits = traits )</p>
-</div>
-<div id="execute-hierarchical-cluster-engine-k-4-groups" class="section level1">
-<h1>Execute Hierarchical Cluster Engine (k = 4 groups)</h1>
+<div id="execute-hierarchical-cluster-engine-e.g.-k-4-groups" class="section level1">
+<h1>Execute Hierarchical Cluster Engine (e.g., k = 4 groups)</h1>
 <p>cl_res &lt;- analyze_clustering( data = gv_data, traits = traits, k =
-4 ) 5. Integrated Publication Graphics Rendering The core graphical
-engine plot_agri_graphics() unifies all statistical diagnostic modules
-into publication-ready plots.</p>
-<p>Code snippet</p>
+4 ) Integrated Publication Graphics Rendering Suite (plot_agri_graphics)
+The unified graphics engine plot_agri_graphics() handles all 6
+visualization modules—ranging from model diagnostic residuals and
+correlation heatmaps to mean performance barcharts, PCA biplots,
+circular dendrograms, and path analysis direct effect plots.
+data(gv_data, package = “AgriDataTools”) traits &lt;- c(“PH”, “SL”,
+“PL”, “NOT”, “NOSS”, “TGW”, “GYPM”) # Define custom mapping or number of
+clusters beforehand k_groups &lt;- 4</p>
 </div>
-<div id="mean-performance-barchart" class="section level1">
-<h1>1. Mean Performance Barchart</h1>
-<p>plot_agri_graphics( type = “mean”, payload = lsd_res, trait_name =
-“Plant Height” )</p>
+<div id="mean-performance-genotypic-performance-with-lsd" class="section level1">
+<h1>1. Mean performance: Genotypic performance with LSD</h1>
+<p>if (interactive()) { reps &lt;- length(unique(gv_data<span class="math inline">\(Replication))
+   fit &lt;- aov(PH ~ Genotype + Replication, data = gv_data)
+   m_anova &lt;- list(anova_table = data.frame(
+     Source = c(&quot;Genotype&quot;, &quot;Replication&quot;,
+&quot;Error&quot;),
+     Df = summary(fit)[[1]]\)</span>Df, MS = summary(fit)[[1]][[3]] ))
+lsd_res &lt;- compute_lsd(gv_data, “PH”, m_anova, reps)
+plot_agri_graphics(type = “mean”, payload = lsd_res, trait_name = “Plant
+Height”) }</p>
 </div>
-<div id="residual-diagnostics-plot" class="section level1">
-<h1>2. Residual Diagnostics Plot</h1>
-<p>fit_lm &lt;- lm(PH ~ Genotype, data = gv_data) res_payload &lt;-
-list( residuals = residuals(fit_lm), fitted_values = fitted(fit_lm) )
-plot_agri_graphics( type = “residual”, payload = res_payload, trait_name
-= “Residuals” )</p>
+<div id="pca-multivariate-variation" class="section level1">
+<h1>2. PCA: Multivariate variation</h1>
+<p>if (interactive()) { custom_traits_map &lt;- c( “PH” = “Plant
+Height”, “SL” = “Spike Length”, “PL” = “Peduncle Length”, “NOT” =
+“Number of Tillers”, “NOSS” = “Number of Spikelets per Spike”, “TGW” =
+“Thousand Grain Weight”, “GYPM” = “Grain Yield per Meter” ) pca_res
+&lt;- analyze_pca(data = gv_data, traits = traits, trait_lookup =
+custom_traits_map) plot_agri_graphics(type = “pca”, payload = pca_res,
+trait_name = “PCA Plot”) }</p>
 </div>
-<div id="path-analysis-direct-effects-plot" class="section level1">
-<h1>3. Path Analysis Direct Effects Plot</h1>
-<p>plot_agri_graphics( type = “path”, payload = path_res, trait_name =
-“Grain Yield per Meter (GYPM)” ) Conclusion The AgriDataTools
-computational suite bridges raw phenotypic data processing and
-publication-ready biometrical visual diagnostics in R. For full function
-signature descriptions, consult the package manual (help(package =
-“AgriDataTools”)).</p>
+<div id="clustering-dendrogram-with-flexible-cluster-parameter-option" class="section level1">
+<h1>3. Clustering: Dendrogram with flexible cluster parameter
+option</h1>
+<p>if (interactive()) { cl_res &lt;- analyze_clustering(data = gv_data,
+traits = traits, k = k_groups) plot_agri_graphics(type = “cluster”,
+payload = cl_res, trait_name = “Clustering”, num_clusters = k_groups)
+}</p>
+</div>
+<div id="residuals-diagnostic-plots" class="section level1">
+<h1>4. Residuals: Diagnostic plots</h1>
+<p>if (interactive()) { fit &lt;- lm(PH ~ Genotype, data = gv_data)
+res_pl &lt;- list(residuals = residuals(fit), fitted_values =
+fitted(fit)) plot_agri_graphics(type = “residual”, payload = res_pl,
+trait_name = “Residuals”) }</p>
+</div>
+<div id="correlations-phenotypic-matrix" class="section level1">
+<h1>5. Correlations: Phenotypic matrix</h1>
+<p>if (interactive()) { cor_m &lt;- cor(gv_data[, traits], use =
+“pairwise.complete.obs”) plot_agri_graphics(type = “correlation”,
+payload = list(correlation_matrix = cor_m), trait_name = “Correlation”)
+}</p>
+</div>
+<div id="path-analysis-direct-effects-plot-for-grain-yield-per-meter-gypm" class="section level1">
+<h1>6. Path Analysis: Direct Effects Plot for Grain Yield per Meter
+(GYPM)</h1>
+<p>if (interactive()) { corr_res &lt;- compute_correlation(data =
+gv_data, traits = traits, reporting_level = 0) all_predictors &lt;-
+c(“PH”, “SL”, “PL”, “NOT”, “NOSS”, “TGW”) path_res &lt;-
+compute_path_analysis( correlation_payload = corr_res, response_trait =
+“GYPM”, predictor_traits = all_predictors, reporting_level = 0 )
+plot_agri_graphics(type = “path”, payload = path_res, trait_name =
+“Grain Yield per Meter (GYPM)”) } Conclusion The AgriDataTools package
+bridges the gap between raw phenotypic screening and advanced
+biometrical visual analytics in R. By unifying quantitative genetics,
+statistical modeling, and publication-grade graphics into a single
+platform, it empowers agricultural researchers to accelerate crop
+improvement programs.</p>
 </div>
 
 

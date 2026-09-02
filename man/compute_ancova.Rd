@@ -2,56 +2,59 @@
 % Please edit documentation in R/compute_ancova.R
 \name{compute_ancova}
 \alias{compute_ancova}
-\title{Analysis of Covariance (ANCOVA) Engine for Plant Breeding Trials}
+\title{Compact Analysis of Covariance (ANCOVA) Table Engine for Plant Breeding}
 \usage{
-compute_ancova(data, response_trait, covariate_trait, reporting_level = 2)
+compute_ancova(
+  data,
+  response_trait,
+  covariate_trait,
+  genotype_col = NULL,
+  rep_col = NULL,
+  reporting_level = 1
+)
 }
 \arguments{
-\item{data}{A verified \code{data.frame} containing the experimental trial records.}
+\item{data}{A verified \code{data.frame} containing experimental trial records.}
 
-\item{response_trait}{A character string specifying the dependent phenotypic trait column.}
+\item{response_trait}{A character string specifying the dependent phenotypic response variable (e.g., "GYPM").}
 
-\item{covariate_trait}{A character string specifying the auxiliary covariate column.}
+\item{covariate_trait}{A character string specifying the auxiliary covariate variable (e.g., "PH").}
 
-\item{reporting_level}{An integer vector flag defining console trace settings:
-\code{0} for silent execution, \code{1} for printing the variance partitioning table, and \code{2} for exhaustive diagnostic tracking logs. Defaults to \code{2}.}
+\item{genotype_col}{Optional character string specifying the genotype column. Defaults to \code{NULL} for auto-detection.}
+
+\item{rep_col}{Optional character string specifying the replication column. Defaults to \code{NULL} for auto-detection.}
+
+\item{reporting_level}{An integer flag: \code{0} for silent execution, \code{1} for printing the ANCOVA table. Defaults to \code{1}.}
 }
 \value{
-Invisibly returns a structured named \code{list} of class \code{"list"} containing 5 computational components:
-\item{response_trait}{A character string indicating the target phenotypic response variable evaluated.}
-\item{covariate_trait}{A character string indicating the concomitant covariate variable utilized for model adjustment.}
-\item{model}{The underlying fitted linear model object of class \code{\link[stats]{aov}}.}
-\item{ancova_table}{A summary list structure of class \code{"summary.aov"} containing the Analysis of Covariance table with degrees of freedom, sums of squares, mean squares, F-values, and p-values.}
-\item{adjusted_means}{A \code{data.frame} containing the covariate-adjusted genotypic/cultivar means (least-squares means) calculated at the mean value of the covariate.}
-
-If \code{reporting_level >= 1}, the compiled ANCOVA table is printed directly to the console before returning the output object.
+Invisibly returns a structured list containing:
+\item{ancova_table}{A compact \code{data.frame} containing the exact ANCOVA source table.}
+\item{covariance_components}{A named numeric vector containing isolated \code{Cov_e}, \code{Cov_g}, and \code{Cov_p} values.}
+\item{adjusted_means}{A \code{data.frame} containing covariate-adjusted genotypic least-squares means.}
 }
 \description{
-The `compute_ancova` function performs an exhaustive Analysis of Covariance
-across agricultural experimental records. It adjusts the treatment (genotypic)
-means for differences in a concomitant variable (covariate) to improve experimental
-precision and error control.
+The \code{compute_ancova} function evaluates an Analysis of Covariance (ANCOVA) 
+and compiles a streamlined, standard biometrical table featuring Degrees of Freedom (Df), 
+Sum of Products (SP_XY), Mean Products (MP_XY), exact Biometrical F-values, p-values, significance flags, 
+and rigorous Covariance components (Cov_e, Cov_g, Cov_p).
 }
 \details{
-In agricultural experiments, variation in a dependent phenotypic trait can sometimes
-be partially controlled by measuring a secondary auxiliary property (covariate, e.g., initial
-stand count or flowering duration). This engine fits a linear model incorporating both
-the categorical genotypic design structure and the continuous covariate vector, extracting
-the adjusted sums of squares, F-statistics, and adjusted marginal means.
+The mathematical partitioning under RCBD framework is computed using joint reduction methods:
+\deqn{SP_{Total} = SP_{Replications} + SP_{Genotypes} + SP_{Residual}}
+\deqn{MP_{XY} = \frac{SP_{XY}}{Df}}
+\deqn{Cov_e = MP_{Error}}
+\deqn{Cov_g = \frac{MP_{Genotypes} - MP_{Error}}{r}}
+\deqn{Cov_p = Cov_g + \frac{Cov_e}{r}}
 }
 \examples{
-data(gv_data, package = "AgriDataTools")
+library(AgriDataTools)
+data("gv_data", package = "AgriDataTools")
 
-# Perform ANCOVA using Plant Height (PH) as response and Spike Length (SL) as covariate
-ancova_res <- compute_ancova(
-  data = gv_data,
-  response_trait = "PH",
-  covariate_trait = "SL",
-  reporting_level = 2
+# Run Analysis of Covariance between Grain Yield per Meter and Plant Height
+ancova_results <- compute_ancova(
+    data = gv_data,
+    response_trait = "GYPM",
+    covariate_trait = "PH"
 )
-print(ancova_res$ancova_table)
 
-}
-\seealso{
-\code{\link{validate_agri_data}}, \code{\link{compute_lsd}}
 }

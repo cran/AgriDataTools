@@ -4,28 +4,36 @@
 \alias{compute_correlation}
 \title{Multi-Level Genetic, Phenotypic, and Environmental Correlation Engine}
 \usage{
-compute_correlation(data, traits = NULL, reporting_level = 1)
+compute_correlation(
+  data,
+  traits = NULL,
+  genotype_col = NULL,
+  rep_col = NULL,
+  reporting_level = 1
+)
 }
 \arguments{
 \item{data}{A \code{data.frame} containing experimental phenotypic records with \code{Genotype} and \code{Replication} (or \code{Rep}) factors.}
 
 \item{traits}{A character vector specifying numeric trait columns to evaluate. Defaults to \code{NULL} for automatic detection.}
 
+\item{genotype_col}{Optional character string specifying the genotype column. Defaults to \code{NULL} for auto-detection.}
+
+\item{rep_col}{Optional character string specifying the replication column. Defaults to \code{NULL} for auto-detection.}
+
 \item{reporting_level}{An integer flag defining console trace settings: \code{0} for silent execution and \code{1} for displaying summary matrices with significance codes. Defaults to \code{1}.}
 }
 \value{
-Invisibly returns a structured named \code{list} of class \code{"list"} containing 9 correlation and significance matrices:
-\item{genotypic_correlation}{A \code{data.frame} matrix of genotypic correlation coefficients (\eqn{r_g}) between evaluated traits.}
-\item{phenotypic_correlation}{A \code{data.frame} matrix of phenotypic correlation coefficients (\eqn{r_p}) between evaluated traits.}
-\item{environmental_correlation}{A \code{data.frame} matrix of environmental correlation coefficients (\eqn{r_e}) between evaluated traits.}
-\item{genotypic_significance}{A \code{data.frame} matrix of genotypic correlations formatted with significance stars (\code{***}, \code{**}, \code{*}, or \code{ns}).}
+Invisibly returns a structured named \code{list} containing 9 correlation and significance matrices:
+\item{genotypic_correlation}{A \code{data.frame} matrix of genotypic correlation coefficients (\eqn{r_g}).}
+\item{phenotypic_correlation}{A \code{data.frame} matrix of phenotypic correlation coefficients (\eqn{r_p}).}
+\item{environmental_correlation}{A \code{data.frame} matrix of environmental correlation coefficients (\eqn{r_e}).}
+\item{genotypic_significance}{A \code{data.frame} matrix of genotypic correlations formatted with significance stars.}
 \item{phenotypic_significance}{A \code{data.frame} matrix of phenotypic correlations formatted with significance stars.}
 \item{environmental_significance}{A \code{data.frame} matrix of environmental correlations formatted with significance stars.}
-\item{genotypic_p_values}{A \code{data.frame} matrix containing raw calculated two-tailed p-values for genotypic correlations.}
-\item{phenotypic_p_values}{A \code{data.frame} matrix containing raw calculated two-tailed p-values for phenotypic correlations.}
-\item{environmental_p_values}{A \code{data.frame} matrix containing raw calculated two-tailed p-values for environmental correlations.}
-
-If \code{reporting_level >= 1}, formatted correlation matrices with significance flags are printed directly to the console before returning the output object.
+\item{genotypic_p_values}{A \code{data.frame} matrix containing raw calculated p-values for genotypic correlations.}
+\item{phenotypic_p_values}{A \code{data.frame} matrix containing raw calculated p-values for phenotypic correlations.}
+\item{environmental_p_values}{A \code{data.frame} matrix containing raw calculated p-values for environmental correlations.}
 }
 \description{
 The \code{compute_correlation} function calculates genotypic (\eqn{r_g}), phenotypic (\eqn{r_p}),
@@ -39,16 +47,16 @@ The engine partitions variance and covariance components using mean squares (MS)
 \deqn{r_e = \frac{Cov_e}{\sqrt{\sigma^2_{e1} \cdot \sigma^2_{e2}}}}
 }
 \examples{
-# Load benchmark breeding dataset
+# Load your own dataset
 data(gv_data, package = "AgriDataTools")
 
-# Define trait columns
-my_traits <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW", "GYPM")
+# Specify trait columns matching your dataset structure
+traits <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW", "GYPM")
 
-# Run multi-level correlation engine
+# Run correlation engine
 corr_results <- compute_correlation(
   data = gv_data,
-  traits = my_traits,
+  traits = traits,
   reporting_level = 1
 )
 }

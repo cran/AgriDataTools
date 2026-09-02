@@ -4,26 +4,36 @@
 \alias{anova_rcbd}
 \title{Comprehensive Analysis of Variance (ANOVA) Engine for Randomized Complete Block Design (RCBD)}
 \usage{
-anova_rcbd(data, trait, reporting_level = 2)
+anova_rcbd(
+  data,
+  trait,
+  genotype_col = NULL,
+  rep_col = NULL,
+  reporting_level = 1
+)
 }
 \arguments{
-\item{data}{A verified \code{data.frame} containing the columns \code{Genotype}, \code{Replication},
-and the target phenotypic trait response.}
+\item{data}{A verified \code{data.frame} containing genotype, replication block, and phenotypic response vectors.}
 
 \item{trait}{A single character string specifying the exact column name of the numeric trait to analyze.}
 
-\item{reporting_level}{An integer vector flag defining console trace settings: \code{0} for silent,
-\code{1} for basic summary tables, and \code{2} for comprehensive descriptive metrics. Defaults to \code{2}.}
+\item{genotype_col}{An optional character string specifying the column name for genotypes. If \code{NULL}, automatic column detection is performed. Defaults to \code{NULL}.}
+
+\item{rep_col}{An optional character string specifying the column name for replications/blocks. If \code{NULL}, automatic column detection is performed. Defaults to \code{NULL}.}
+
+\item{reporting_level}{An integer flag defining console trace settings: \code{0} for silent execution, and \code{1} for printing formatted summary tables. Defaults to \code{1}.}
 }
 \value{
-A structured named \code{list} containing 4 computational components:
-\item{anova_table}{A \code{data.frame} acting as the standard ANOVA source matrix table containing Df, SS, MS, F_value, and p_value.}
-\item{cv_percentage}{The computed Coefficient of Variation percentage scalar (\eqn{CV\%}).}
-\item{mean_square_error}{The isolated Residual Error Mean Square (EMS), ready for genetic parameter engines.}
-\item{grand_mean}{The general mean arithmetic value of the evaluated trait.}
+Invisibly returns a structured named \code{list} of class \code{"list"} containing 4 computational components:
+\itemize{
+  \item \strong{anova_table}: A \code{data.frame} acting as the standard ANOVA source matrix table containing Df, SS, MS, F_value, p_value, and significance flags.
+  \item \strong{cv_percentage}: The computed Coefficient of Variation percentage scalar (CV%).
+  \item \strong{mean_square_error}: The isolated Residual Error Mean Square (EMS), ready for genetic parameter engines.
+  \item \strong{grand_mean}: The general mean arithmetic value of the evaluated trait.
+}
 }
 \description{
-The `anova_rcbd` function executes a complete, high-precision linear model analysis for
+The \code{anova_rcbd} function executes a complete, high-precision linear model analysis for
 agricultural trials laid out under an RCBD framework. It computes partition sums of squares,
 hypothesis testing statistics, significance flags, and the Coefficient of Variation (CV%).
 }
@@ -36,10 +46,12 @@ Where \eqn{G_i} represents the genotype effect, \eqn{R_j} is the replication blo
 and \eqn{e_{ij}} is the residual experimental error.
 }
 \examples{
-   # Execute complete RCBD partition on gv_data asset for Plant Height (PH)
-   rcbd_results <- anova_rcbd(data = gv_data, trait = "PH")
+# Load your own dataset
+data(gv_data, package = "AgriDataTools")
+# Execute complete RCBD partition on target trait Plant Height(PH)
+rcbd_results <- anova_rcbd(data = gv_data, trait = "PH")
 
 }
 \seealso{
-\code{\link{compute_lsd}}
+\code{\link{anova_crd}}
 }

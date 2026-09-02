@@ -33,7 +33,7 @@ A structured named \code{list} containing path partition analyses for available 
 \item{predictors}{Character vector of causal predictor traits included in the pathway model.}
 }
 \description{
-The `compute_path_analysis` function executes phenotypic and genotypic path coefficient 
+The \code{compute_path_analysis} function executes phenotypic and genotypic path coefficient 
 analysis based on the classic standard methodology of Dewey and Lu (1959). It partitions 
 correlation coefficients between causal developmental traits and a target response 
 variable into direct influence coefficients and indirect pathways acting through interconnected traits.
@@ -50,22 +50,16 @@ coefficients. The unexplained residual effect (\eqn{R_X}) is derived as:
 \deqn{R_X = \sqrt{1 - \sum (\beta_i \times r_i)}}
 }
 \examples{
-\donttest{
-   # Compute multi-level correlation matrices
-   corr_payload <- compute_correlation(data = gv_data, reporting_level = 0)
-   
-   # Define all 6 causal predictor traits driving Grain Yield per Meter
-   all_predictors <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW")
-   
-   # Run path coefficient analysis across all causal traits with full report
-   path_out <- compute_path_analysis(
-     correlation_payload = corr_payload, 
-     response_trait = "GYPM",
-     predictor_traits = all_predictors,
-     reporting_level = 2
-   )
-}
+data(gv_data, package = "AgriDataTools")
+corr_results <- compute_correlation(data = gv_data, reporting_level = 0)
+all_predictors <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW")
+path_results <- compute_path_analysis(
+  correlation_payload = corr_results, 
+  response_trait = "GYPM",
+  predictor_traits = all_predictors,
+  reporting_level = 2
+)
 }
 \seealso{
-\code{\link{compute_correlation}}, \code{\link{compute_summary_stats}}
+\code{\link{compute_correlation}}
 }

@@ -12,14 +12,14 @@ A \code{data.frame} containing phenotypic records with wheat morphological trait
   \item{PH}{Plant Height measured in centimeters (cm).}
   \item{PL}{Peduncle Length measured in centimeters (cm).}
   \item{SL}{Spike Length measured in centimeters (cm).}
-  \item{NOT}{Number of tillers per plant.}
-  \item{NOSS}{Number of spikelets per spike.}
-  \item{TGW}{Thousand grain weight measured in grams (g).}
-  \item{GYPM}{Grain yield per meter measured in grams (g).}
+  \item{NOT}{Number of Tillers per plant.}
+  \item{NOSS}{Number of Spikelets Per Spike.}
+  \item{TGW}{Thousand Grain Weight measured in grams (g).}
+  \item{GYPM}{Grain Yield Per Meter measured in grams (g).}
 }
 }
 \source{
-Experimental plant breeding field trial records.
+Orignal experimentSal data from a wheat field trial conducted under Randomized Complete Block Design (RCBD) involving multiple genotypes and phenotypic traits.
 }
 \usage{
 data(gv_data)

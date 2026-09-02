@@ -1,7 +1,7 @@
 #' Comprehensive Analysis of Variance (ANOVA) Engine for Completely Randomized Design (CRD)
 #'
 #' @description
-#' The `anova_crd` function executes a complete, high-precision linear model analysis for
+#' The \code{anova_crd} function executes a complete, high-precision linear model analysis for
 #' agricultural, laboratory, or greenhouse trials laid out under a Completely Randomized Design (CRD).
 #' It computes partition sums of squares, hypothesis testing statistics, treatment variances,
 #' significance flags, and the Coefficient of Variation (CV%).
@@ -16,129 +16,126 @@
 #' residual experimental error. The function handles both balanced and unbalanced data structures
 #' perfectly, ensuring proper adjustments to degrees of freedom if replication numbers vary across lines.
 #'
-#' @param data A verified \code{data.frame} containing the columns \code{Genotype} and the
-#'    target phenotypic trait response.
+#' @param data A verified \code{data.frame} containing genotype/treatment identifiers and phenotypic responses.
 #' @param trait A single character string specifying the exact column name of the numeric trait to analyze.
-#' @param reporting_level An integer flag defining console trace settings: \code{0} for silent execution,
-#'    \code{1} for printing basic ANOVA summary tables, and \code{2} for comprehensive diagnostic trace logs. Defaults to \code{2}.
+#' @param genotype_col An optional character string specifying the column name for genotypes. If \code{NULL}, automatic column detection is performed. Defaults to \code{NULL}.
+#' @param reporting_level An integer flag defining console trace settings: \code{0} for silent execution and \code{1} for printing formatted ANOVA summary tables. Defaults to \code{1}.
 #'
-#' @return Invisibly returns a structured named \code{list} of class \code{"list"} containing 4 computational components:
-#' \item{anova_table}{A \code{data.frame} acting as the standard ANOVA source matrix table for CRD, containing degrees of freedom, sums of squares, mean squares, F-statistics, and p-values.}
-#' \item{cv_percentage}{A numeric scalar representing the computed Coefficient of Variation percentage (CV\%).}
-#' \item{mean_square_error}{A numeric scalar representing the isolated Residual Error Mean Square (EMS), ready for downstream evaluation.}
-#' \item{grand_mean}{A numeric scalar representing the overall arithmetic mean value of the evaluated phenotypic trait.}
-#' 
-#' If \code{reporting_level >= 1}, the compiled ANOVA table along with the grand mean and CV\% are printed directly to the console before returning the list.
+#' @return Invisibly returns a structured named \code{list} containing 4 computational components:
+#' \itemize{
+#'   \item \strong{anova_table}: A \code{data.frame} acting as the standard ANOVA source matrix table for CRD.
+#'   \item \strong{cv_percentage}: A numeric scalar representing the computed Coefficient of Variation percentage.
+#'   \item \strong{mean_square_error}: A numeric scalar representing the isolated Residual Error Mean Square.
+#'   \item \strong{grand_mean}: A numeric scalar representing the overall arithmetic mean value.
+#' }
 #'
 #' @seealso \code{\link{anova_rcbd}}
-#'
+#' @importFrom stats anova as.formula lm complete.cases
 #' @export
 #'
 #' @examples
-#'    # Execute complete CRD partition on your actual target trait (GYPM)
-#'    crd_results <- anova_crd(data = gv_data, trait = "GYPM")
-#'    
-anova_crd <- function(data, trait, reporting_level = 2) {
+#' # Load your own dataset
+#' data(gv_data, package = "AgriDataTools")
+#' # Execute complete CRD partition on target trait Plant Height(PH)
+#' crd_results <- anova_crd(data = gv_data, trait = "PH", genotype_col = "Genotype")
+#' 
+anova_crd <- function(data, trait, genotype_col = NULL, reporting_level = 1) {
   
-  # =========================================================================
-  # BLOCK 1: ENVIRONMENTAL REGISTRATION AND DIAGNOSTIC TRACE SETUP
-  # =========================================================================
-  timestamp_start <- Sys.time()
-  
-  if (reporting_level >= 1) {
-    cat(rep("=", 85), "\n", sep = "")
-    cat("AGRIDATATOOLS PACKAGED ENGINE v0.1.0 - COMPLETELY RANDOMIZED DESIGN (CRD) ANOVA\n")
-    cat("Analysis Inception: ", as.character(timestamp_start), "\n")
-    cat(rep("-", 85), "\n", sep = "")
-  }
-  
-  # =========================================================================
-  # BLOCK 2: SYSTEM DEFENSE AND STRUCTURAL GATEKEEPER
-  # =========================================================================
   if (missing(data) || missing(trait)) {
     stop("CRITICAL EXECUTION FAULT: Both 'data' and 'trait' arguments must be supplied.", call. = FALSE)
   }
   
   if (!trait %in% colnames(data)) {
-    stop(paste0("TRAIT REGISTRATION FAULT: Target column '", trait, "' was not discovered."), call. = FALSE)
+    stop(paste0("TRAIT REGISTRATION FAULT: Target column '", trait, "' was not discovered in dataset."), call. = FALSE)
   }
   
-  data$Genotype   <- as.factor(data$Genotype)
-  response_vector <- as.numeric(data[[trait]])
-  
-  if (any(is.na(response_vector))) {
-    stop("DATA TRUNCATION FAULT: Missing values (NA) detected. CRD pipeline aborted.", call. = FALSE)
+  # Dynamic Genotype Column Detection
+  if (is.null(genotype_col)) {
+    possible_geno_cols <- c("Genotype", "genotype", "Genotypes", "genotypes", "Gen", "gen", "Variety", "variety", "Line", "line", "Treatment", "treatment")
+    matched_col <- intersect(possible_geno_cols, colnames(data))
+    if (length(matched_col) > 0) {
+      genotype_col <- matched_col[1]
+    } else {
+      stop("GENOTYPE COLUMN FAULT: Could not automatically detect Genotype/Treatment column. Please specify 'genotype_col'.", call. = FALSE)
+    }
   }
   
-  # =========================================================================
-  # BLOCK 3: LINEAR MODEL MATRIX ALGEBRA
-  # =========================================================================
-  if (reporting_level >= 2) {
-    cat("[DIAGNOSTIC - MODEL]: Fitting one-way orthogonal linear model matrix formulas...\n")
+  if (!genotype_col %in% colnames(data)) {
+    stop(paste0("GENOTYPE COLUMN FAULT: Specified genotype column '", genotype_col, "' not found in dataset."), call. = FALSE)
   }
   
-  formula_string <- paste0("`", trait, "` ~ Genotype")
-  fitted_model   <- lm(as.formula(formula_string), data = data)
-  raw_anova      <- anova(fitted_model)
+  # Clean NA values safely
+  clean_data <- data[!is.na(data[[trait]]) & !is.na(data[[genotype_col]]), , drop = FALSE]
+  if (nrow(clean_data) < nrow(data)) {
+    warning(paste0("MISSING DATA NOTICE: Removed ", nrow(data) - nrow(clean_data), " rows containing NA values in trait or genotype column."), call. = FALSE)
+  }
   
-  df_gen <- raw_anova["Genotype", "Df"]
+  clean_data[[genotype_col]] <- as.factor(clean_data[[genotype_col]])
+  response_vector <- as.numeric(clean_data[[trait]])
+  
+  # Fit Linear Model
+  formula_string <- paste0("`", trait, "` ~ `", genotype_col, "`")
+  fitted_model   <- stats::lm(stats::as.formula(formula_string), data = clean_data)
+  raw_anova      <- stats::anova(fitted_model)
+  
+  df_gen <- raw_anova[1, "Df"]
   df_err <- raw_anova["Residuals", "Df"]
   df_tot <- df_gen + df_err
-  ss_gen <- raw_anova["Genotype", "Sum Sq"]
+  
+  ss_gen <- raw_anova[1, "Sum Sq"]
   ss_err <- raw_anova["Residuals", "Sum Sq"]
   ss_tot <- ss_gen + ss_err
-  ms_gen <- raw_anova["Genotype", "Mean Sq"]
+  
+  ms_gen <- raw_anova[1, "Mean Sq"]
   ms_err <- raw_anova["Residuals", "Mean Sq"]
-  f_gen  <- raw_anova["Genotype", "F value"]
-  p_gen  <- raw_anova["Genotype", "Pr(>F)"]
+  
+  f_gen  <- raw_anova[1, "F value"]
+  p_gen  <- raw_anova[1, "Pr(>F)"]
+  
+  # Significance stars flag assignment
+  signif_flag <- ifelse(is.na(p_gen), "",
+                        ifelse(p_gen < 0.001, "***",
+                               ifelse(p_gen < 0.01,  "**",
+                                      ifelse(p_gen < 0.05,  "*", "ns"))))
   
   grand_mean_val <- mean(response_vector)
   cv_val         <- (sqrt(ms_err) / grand_mean_val) * 100
   
   compiled_anova <- data.frame(
-    "Source"  = c("Genotypes (Treatments)", "Error (Residual)", "Total"),
-    "Df"      = c(df_gen, df_err, df_tot),
-    "SS"      = c(ss_gen, ss_err, ss_tot),
-    "MS"      = c(ms_gen, ms_err, NA),
-    "F_value" = c(f_gen, NA, NA),
-    "p_value" = c(p_gen, NA, NA),
+    "Source"    = c("Genotypes", "Error", "Total"),
+    "Df"        = c(df_gen, df_err, df_tot),
+    "SS"        = c(ss_gen, ss_err, ss_tot),
+    "MS"        = c(ms_gen, ms_err, NA),
+    "F_value"   = c(f_gen, NA, NA),
+    "p_value"   = c(p_gen, NA, NA),
+    "Signif"    = c(signif_flag, "", ""),
     stringsAsFactors = FALSE
   )
   
-  # =========================================================================
-  # BLOCK 4: CONSOLE PRESENTATION PIPELINE
-  # =========================================================================
+  # Console Output Pipeline
   if (reporting_level >= 1) {
-    cat("\n", rep("-", 75), "\n", sep = "")
+    cat("\n", rep("=", 85), "\n", sep = "")
     cat(" ANALYSIS OF VARIANCE (ANOVA) FOR CRD - TRAIT: ", trait, "\n")
-    cat(rep("-", 75), "\n", sep = "")
+    cat(rep("=", 85), "\n", sep = "")
     
     print_table <- compiled_anova
-    print_table$SS <- round(print_table$SS, 4)
-    print_table$MS <- round(print_table$MS, 4)
-    print_table$F_value <- round(print_table$F_value, 3)
-    print_table$p_value <- format.pval(print_table$p_value, digits = 4, eps = 0.001)
+    print_table$SS <- ifelse(is.na(print_table$SS), "", sprintf("%.4f", print_table$SS))
+    print_table$MS <- ifelse(is.na(print_table$MS), "", sprintf("%.4f", print_table$MS))
+    print_table$F_value <- ifelse(is.na(print_table$F_value), "", sprintf("%.3f", print_table$F_value))
+    print_table$p_value <- ifelse(is.na(print_table$p_value), "", format.pval(print_table$p_value, digits = 4, eps = 0.001))
     
     print(print_table, row.names = FALSE)
     
-    cat(rep("-", 75), "\n", sep = "")
-    cat(" Trial Grand Mean                 : ", round(grand_mean_val, 4), "\n")
-    cat(" Coefficient of Variation (CV%)   : ", round(cv_val, 2), "%\n")
+    cat(rep("-", 85), "\n", sep = "")
+    cat(" Grand Mean                        : ", sprintf("%.4f", grand_mean_val), "\n")
+    cat(" Coefficient of Variation (CV%)    : ", sprintf("%.2f", cv_val), "%\n")
     cat(rep("=", 85), "\n\n", sep = "")
   }
   
-  # =========================================================================
-  # BLOCK 5: METADATA EMBEDDING AND EXIT PAYLOAD
-  # =========================================================================
-  if (reporting_level >= 2) {
-    processing_seconds <- as.numeric(difftime(Sys.time(), timestamp_start, units = "secs"))
-    cat("[LOG - FINALIZE]: CRD matrix compilation finished in ", round(processing_seconds, 5), " seconds.\n")
-  }
-  
   return(invisible(list(
-    anova_table = compiled_anova,
-    cv_percentage = cv_val,
-    mean_square_error = ms_err,
-    grand_mean = grand_mean_val
+    anova_table         = compiled_anova,
+    cv_percentage       = cv_val,
+    mean_square_error   = ms_err,
+    grand_mean          = grand_mean_val
   )))
 }

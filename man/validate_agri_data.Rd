@@ -4,54 +4,42 @@
 \alias{validate_agri_data}
 \title{Rigid Multi-Layered Structural Data Validation and Matrix Integrity Engine}
 \usage{
-validate_agri_data(data, strict_mode = TRUE, reporting_level = 2)
+validate_agri_data(data, reporting_level = 1)
 }
 \arguments{
-\item{data}{A non-null \code{data.frame} containing the experimental field trial records.}
+\item{data}{A non-null \code{data.frame} containing experimental field trial records.}
 
-\item{strict_mode}{A logical scalar. If \code{TRUE}, the validation engine demands an absolute structural
-match with the core dataset archetype: exactly 120 rows, 40 distinct genotypes, 3 replications,
-and all 7 mandatory phenotypic traits (\code{PH}, \code{SL}, \code{PL}, \code{NOT}, \code{NOSS},
-\code{TGW}, \code{GYPM}). Defaults to \code{TRUE}.}
-
-\item{reporting_level}{An integer mapping scale indicating console log verbosity: \code{0} for dead silent,
-\code{1} for critical system steps, and \code{2} for exhaustive vector diagnostics. Defaults to \code{2}.}
+\item{reporting_level}{An integer mapping scale for console trace output: \code{0} for silent,
+\code{1} for clean summary status report. Defaults to \code{1}.}
 }
 \value{
 A logical scalar \code{TRUE} if the dataset completely satisfies the operational constraints
-  of the biometrical pipeline. If any structural non-compliance is detected, it throws a highly structured,
-  informative exception detailing the exact coordinates of the failure.
+  of the biometrical pipeline. Throws informative errors if critical structural faults are detected.
 }
 \description{
-The `validate_agri_data` function serves as the primary data defense matrix of the
-\code{AgriDataTools} package. It is engineered to perform exhaustive, multi-dimensional
-quality control, type alignment checks, and semantic structural audits on user-provided
-datasets before they are passed to sensitive breeding and quantitative genetic workflows.
+The \code{validate_agri_data} function serves as the primary data defense matrix of the
+\code{AgriDataTools} package. It performs automated multi-dimensional quality control,
+type alignment checks, and semantic structural audits on agricultural research datasets
+before passing them to downstream quantitative genetic workflows.
 }
 \details{
-In biometric computing, agricultural research, and plant breeding quantitative data analysis,
-downstream models like ANOVA, Heritability estimations, and Path analysis are highly vulnerable
-to layout irregularities. Silent formatting issues inside spreadsheets can bias variance
-components or trigger generic engine failures.
+In quantitative genetics, downstream models like ANOVA, Heritability estimations, and Path analysis
+are highly vulnerable to layout irregularities. Silent formatting issues can bias variance
+components or trigger execution failures.
 
-To solve this, `validate_agri_data` runs an automated, multi-tiered defensive pipeline:
+\code{validate_agri_data} runs a dynamic defensive pipeline:
 \enumerate{
-  \item \strong{Object and Class Matrix Verification:} Ensures the input object is a true dataframe.
-  \item \strong{Dimension Capability Evaluation:} Checks for absolute row/column structural thresholds.
-  \item \strong{Strict Column Header Matching:} Verifies the existence of structural keys and core traits.
-  \item \strong{Categorical Factor Integrity Audits:} Verifies grouping layouts for Genotypes and Replications.
-  \item \strong{Quantitative Type Compliance Testing:} Validates phenotypic trait vectors for numeric compliance.
-  \item \strong{Biological Range and Bound Inspections:} Screens for mathematical anomalies like negative values.
-  \item \strong{Missing Value (NA) Variance Profiling:} Analyzes missing data distribution across blocks.
+  \item \strong{Object Matrix Verification:} Ensures input is a valid data.frame with observations.
+  \item \strong{Dynamic Header Discovery:} Auto-detects Genotype, Replication, and Trait columns without rigid hardcoding.
+  \item \strong{Factor Balance Audits:} Verifies minimum levels for lines and blocks.
+  \item \strong{Numeric Type & Range Compliance:} Validates numeric integrity and flags biological anomalies (e.g., negative values).
+  \item \strong{Orthogonality Sweep:} Evaluates design layout cell frequencies for balance.
 }
 }
 \examples{
-# Assuming package environments are active and datasets are loaded via data(gv_data)
-if (interactive()) {
-    # Trigger standard validation sweep
-    validation_status <- validate_agri_data(data = gv_data, strict_mode = TRUE)
-    message("Is dataset operational? ", validation_status)
-}
+# Trigger dynamic validation sweep
+validation_status <- validate_agri_data(data = gv_data)
+
 }
 \references{
 \itemize{

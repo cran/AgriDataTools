@@ -13,51 +13,62 @@
 #'
 #' @param data A \code{data.frame} containing experimental phenotypic records with \code{Genotype} and \code{Replication} (or \code{Rep}) factors.
 #' @param traits A character vector specifying numeric trait columns to evaluate. Defaults to \code{NULL} for automatic detection.
+#' @param genotype_col Optional character string specifying the genotype column. Defaults to \code{NULL} for auto-detection.
+#' @param rep_col Optional character string specifying the replication column. Defaults to \code{NULL} for auto-detection.
 #' @param reporting_level An integer flag defining console trace settings: \code{0} for silent execution and \code{1} for displaying summary matrices with significance codes. Defaults to \code{1}.
 #'
-#' @return Invisibly returns a structured named \code{list} of class \code{"list"} containing 9 correlation and significance matrices:
-#' \item{genotypic_correlation}{A \code{data.frame} matrix of genotypic correlation coefficients (\eqn{r_g}) between evaluated traits.}
-#' \item{phenotypic_correlation}{A \code{data.frame} matrix of phenotypic correlation coefficients (\eqn{r_p}) between evaluated traits.}
-#' \item{environmental_correlation}{A \code{data.frame} matrix of environmental correlation coefficients (\eqn{r_e}) between evaluated traits.}
-#' \item{genotypic_significance}{A \code{data.frame} matrix of genotypic correlations formatted with significance stars (\code{***}, \code{**}, \code{*}, or \code{ns}).}
+#' @return Invisibly returns a structured named \code{list} containing 9 correlation and significance matrices:
+#' \item{genotypic_correlation}{A \code{data.frame} matrix of genotypic correlation coefficients (\eqn{r_g}).}
+#' \item{phenotypic_correlation}{A \code{data.frame} matrix of phenotypic correlation coefficients (\eqn{r_p}).}
+#' \item{environmental_correlation}{A \code{data.frame} matrix of environmental correlation coefficients (\eqn{r_e}).}
+#' \item{genotypic_significance}{A \code{data.frame} matrix of genotypic correlations formatted with significance stars.}
 #' \item{phenotypic_significance}{A \code{data.frame} matrix of phenotypic correlations formatted with significance stars.}
 #' \item{environmental_significance}{A \code{data.frame} matrix of environmental correlations formatted with significance stars.}
-#' \item{genotypic_p_values}{A \code{data.frame} matrix containing raw calculated two-tailed p-values for genotypic correlations.}
-#' \item{phenotypic_p_values}{A \code{data.frame} matrix containing raw calculated two-tailed p-values for phenotypic correlations.}
-#' \item{environmental_p_values}{A \code{data.frame} matrix containing raw calculated two-tailed p-values for environmental correlations.}
-#' 
-#' If \code{reporting_level >= 1}, formatted correlation matrices with significance flags are printed directly to the console before returning the output object.
+#' \item{genotypic_p_values}{A \code{data.frame} matrix containing raw calculated p-values for genotypic correlations.}
+#' \item{phenotypic_p_values}{A \code{data.frame} matrix containing raw calculated p-values for phenotypic correlations.}
+#' \item{environmental_p_values}{A \code{data.frame} matrix containing raw calculated p-values for environmental correlations.}
 #'
-#' @importFrom stats aov pt
+#' @importFrom stats aov pt complete.cases
 #' @export
 #'
 #' @examples
-#' # Load benchmark breeding dataset
+#' # Load your own dataset
 #' data(gv_data, package = "AgriDataTools")
 #' 
-#' # Define trait columns
-#' my_traits <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW", "GYPM")
+#' # Specify trait columns matching your dataset structure
+#' traits <- c("PH", "SL", "PL", "NOT", "NOSS", "TGW", "GYPM")
 #' 
-#' # Run multi-level correlation engine
+#' # Run correlation engine
 #' corr_results <- compute_correlation(
 #'   data = gv_data,
-#'   traits = my_traits,
+#'   traits = traits,
 #'   reporting_level = 1
 #' )
-compute_correlation <- function(data, traits = NULL, reporting_level = 1) {
+compute_correlation <- function(data, traits = NULL, genotype_col = NULL, rep_col = NULL, reporting_level = 1) {
   
   if (missing(data) || !is.data.frame(data)) {
     stop("CRITICAL ERROR: Input 'data' must be a valid structured data frame.", call. = FALSE)
   }
   
-  if (!all(c("Genotype", "Replication") %in% colnames(data)) && !all(c("Genotype", "Rep") %in% colnames(data))) {
-    stop("CRITICAL ERROR: Data must contain 'Genotype' and 'Replication' (or 'Rep') columns for genetic partitioning.", call. = FALSE)
+  # Auto-detect Genotype Column
+  if (is.null(genotype_col)) {
+    possible_geno <- c("Genotype", "genotype", "Genotypes", "Gen", "Variety", "Cultivar", "Line")
+    matched_geno <- intersect(possible_geno, colnames(data))
+    if (length(matched_geno) > 0) genotype_col <- matched_geno[1]
+    else stop("GENOTYPE COLUMN FAULT: Could not auto-detect genotype column. Specify 'genotype_col'.", call. = FALSE)
   }
   
-  rep_col <- if ("Replication" %in% colnames(data)) "Replication" else "Rep"
+  # Auto-detect Replication Column
+  if (is.null(rep_col)) {
+    possible_rep <- c("Replication", "replication", "Replications", "Rep", "rep", "Block")
+    matched_rep <- intersect(possible_rep, colnames(data))
+    if (length(matched_rep) > 0) rep_col <- matched_rep[1]
+    else stop("REPLICATION COLUMN FAULT: Could not auto-detect replication column. Specify 'rep_col'.", call. = FALSE)
+  }
   
+  # Auto-detect Traits
   if (is.null(traits)) {
-    ignore_fields <- c("Genotype", rep_col, "Block", "Line", "Cultivar")
+    ignore_fields <- c(genotype_col, rep_col, "Block", "Line", "Cultivar")
     all_cols      <- colnames(data)
     numeric_cols  <- all_cols[sapply(data, is.numeric)]
     traits        <- setdiff(numeric_cols, ignore_fields)
@@ -73,11 +84,15 @@ compute_correlation <- function(data, traits = NULL, reporting_level = 1) {
     stop("DISCOVERY ERROR: At least two numeric traits are required for correlation analysis.", call. = FALSE)
   }
   
-  data$Genotype <- as.factor(data$Genotype)
-  data[[rep_col]] <- as.factor(data[[rep_col]])
+  # Filter complete cases across selected traits and design factors
+  clean_cols <- c(genotype_col, rep_col, traits)
+  clean_data <- data[stats::complete.cases(data[, clean_cols]), , drop = FALSE]
   
-  g <- length(levels(data$Genotype))
-  r <- length(levels(data[[rep_col]]))
+  clean_data[[genotype_col]] <- as.factor(clean_data[[genotype_col]])
+  clean_data[[rep_col]]      <- as.factor(clean_data[[rep_col]])
+  
+  g <- nlevels(clean_data[[genotype_col]])
+  r <- nlevels(clean_data[[rep_col]])
   
   r_g <- matrix(1, nrow = num_traits, ncol = num_traits, dimnames = list(traits, traits))
   r_p <- matrix(1, nrow = num_traits, ncol = num_traits, dimnames = list(traits, traits))
@@ -97,41 +112,48 @@ compute_correlation <- function(data, traits = NULL, reporting_level = 1) {
       t1 <- traits[i]
       t2 <- traits[j]
       
-      fit1 <- stats::aov(data[[t1]] ~ data[[rep_col]] + data$Genotype)
-      fit2 <- stats::aov(data[[t2]] ~ data[[rep_col]] + data$Genotype)
+      fit1 <- stats::aov(clean_data[[t1]] ~ clean_data[[rep_col]] + clean_data[[genotype_col]])
+      fit2 <- stats::aov(clean_data[[t2]] ~ clean_data[[rep_col]] + clean_data[[genotype_col]])
       
-      ms_g1 <- summary(fit1)[[1]]["data$Genotype", "Mean Sq"]
-      ms_g2 <- summary(fit2)[[1]]["data$Genotype", "Mean Sq"]
-      ms_e1 <- summary(fit1)[[1]]["Residuals", "Mean Sq"]
-      ms_e2 <- summary(fit2)[[1]]["Residuals", "Mean Sq"]
+      sum_fit1 <- summary(fit1)[[1]]
+      sum_fit2 <- summary(fit2)[[1]]
       
-      cp_fit <- stats::aov((data[[t1]] + data[[t2]]) ~ data[[rep_col]] + data$Genotype)
-      mcp_g_total <- summary(cp_fit)[[1]]["data$Genotype", "Mean Sq"]
-      mcp_e_total <- summary(cp_fit)[[1]]["Residuals", "Mean Sq"]
+      ms_g1 <- sum_fit1[2, "Mean Sq"]
+      ms_g2 <- sum_fit2[2, "Mean Sq"]
+      ms_e1 <- sum_fit1["Residuals", "Mean Sq"]
+      ms_e2 <- sum_fit2["Residuals", "Mean Sq"]
+      
+      # Cross-product ANOVA for Covariance
+      cp_fit <- stats::aov((clean_data[[t1]] + clean_data[[t2]]) ~ clean_data[[rep_col]] + clean_data[[genotype_col]])
+      sum_cp <- summary(cp_fit)[[1]]
+      
+      mcp_g_total <- sum_cp[2, "Mean Sq"]
+      mcp_e_total <- sum_cp["Residuals", "Mean Sq"]
       
       mcp_g <- (mcp_g_total - ms_g1 - ms_g2) / 2
       mcp_e <- (mcp_e_total - ms_e1 - ms_e2) / 2
       
       sigma2_e1 <- ms_e1
       sigma2_e2 <- ms_e2
-      cov_e    <- mcp_e
+      cov_e     <- mcp_e
       
-      sigma2_g1 <- (ms_g1 - ms_e1) / r
-      sigma2_g2 <- (ms_g2 - ms_e2) / r
-      cov_g    <- (mcp_g - mcp_e) / r
+      sigma2_g1 <- max(0.00001, (ms_g1 - ms_e1) / r)
+      sigma2_g2 <- max(0.00001, (ms_g2 - ms_e2) / r)
+      cov_g     <- (mcp_g - mcp_e) / r
       
       sigma2_p1 <- sigma2_g1 + (sigma2_e1 / r)
       sigma2_p2 <- sigma2_g2 + (sigma2_e2 / r)
-      cov_p    <- cov_g + (cov_e / r)
+      cov_p     <- cov_g + (cov_e / r)
       
-      val_rg <- cov_g / sqrt(max(0.00001, sigma2_g1 * sigma2_g2))
-      val_rp <- cov_p / sqrt(max(0.00001, sigma2_p1 * sigma2_p2))
-      val_re <- cov_e / sqrt(max(0.00001, sigma2_e1 * sigma2_e2))
+      val_rg <- cov_g / sqrt(sigma2_g1 * sigma2_g2)
+      val_rp <- cov_p / sqrt(sigma2_p1 * sigma2_p2)
+      val_re <- cov_e / sqrt(sigma2_e1 * sigma2_e2)
       
       r_g[i, j] <- r_g[j, i] <- max(-1, min(1, val_rg))
       r_p[i, j] <- r_p[j, i] <- max(-1, min(1, val_rp))
       r_e[i, j] <- r_e[j, i] <- max(-1, min(1, val_re))
       
+      # Standard Error & t-tests
       t_g <- (r_g[i, j] * sqrt(df_g)) / sqrt(max(0.00001, 1 - r_g[i, j]^2))
       t_p <- (r_p[i, j] * sqrt(df_g)) / sqrt(max(0.00001, 1 - r_p[i, j]^2))
       t_e <- (r_e[i, j] * sqrt(df_e)) / sqrt(max(0.00001, 1 - r_e[i, j]^2))
@@ -150,7 +172,7 @@ compute_correlation <- function(data, traits = NULL, reporting_level = 1) {
           formatted_mat[i, j] <- "1.0000"
         } else {
           p <- p_mat[i, j]
-          stars <- if (p <= 0.001) "***" else if (p <= 0.01) "**" else if (p <= 0.05) "*" else "ns"
+          stars <- if (is.na(p)) "ns" else if (p <= 0.001) "***" else if (p <= 0.01) "**" else if (p <= 0.05) "*" else "ns"
           formatted_mat[i, j] <- paste0(sprintf("%.4f", r_mat[i, j]), " ", stars)
         }
       }
@@ -163,20 +185,20 @@ compute_correlation <- function(data, traits = NULL, reporting_level = 1) {
   sig_e_df <- format_with_stars(r_e, p_e)
   
   if (reporting_level >= 1) {
-    cat("\n", rep("=", 80), "\n", sep = "")
+    cat("\n", rep("=", 85), "\n", sep = "")
     cat(" MULTI-LEVEL CORRELATION ANALYSIS (Genotypic, Phenotypic & Environmental)\n")
     cat(" Significance Codes: *** p<=0.001, ** p<=0.01, * p<=0.05, ns = non-significant\n")
-    cat(rep("=", 80), "\n\n", sep = "")
+    cat(rep("=", 85), "\n\n", sep = "")
     
-    cat("--- GENOTYPIC CORRELATION MATRIX (rg) WITH SIGNIFICANCE ---\n")
+    cat("\nTABLE 1: GENOTYPIC CORRELATION MATRIX (rg)\n")
     print(sig_g_df, quote = FALSE)
     
-    cat("\n--- PHENOTYPIC CORRELATION MATRIX (rp) WITH SIGNIFICANCE ---\n")
+    cat("\nTABLE 2: PHENOTYPIC CORRELATION MATRIX (rp)\n")
     print(sig_p_df, quote = FALSE)
     
-    cat("\n--- ENVIRONMENTAL CORRELATION MATRIX (re) WITH SIGNIFICANCE ---\n")
+    cat("\nTABLE 3: ENVIRONMENTAL CORRELATION MATRIX (re)\n")
     print(sig_e_df, quote = FALSE)
-    cat("\n", rep("=", 80), "\n\n", sep = "")
+    cat("\n", rep("=", 85), "\n\n", sep = "")
   }
   
   return(invisible(list(
